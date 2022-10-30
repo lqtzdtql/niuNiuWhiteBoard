@@ -1,4 +1,4 @@
-package common
+package utils
 
 import (
 	"crypto/md5"
@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-//获取随机数 纯文字
+// 获取随机数 纯文字
 func GetRandomString(n int) string {
 	str := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
@@ -28,7 +28,7 @@ func GetRandomString(n int) string {
 	return string(result)
 }
 
-//获取随机数  数字和文字
+// 获取随机数  数字和文字
 func GetRandomBoth(n int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
@@ -40,7 +40,7 @@ func GetRandomBoth(n int) string {
 	return string(result)
 }
 
-//获取随机数  纯数字
+// 获取随机数  纯数字
 func GetRandomNum(n int) string {
 	str := "0123456789"
 	bytes := []byte(str)
@@ -52,8 +52,7 @@ func GetRandomNum(n int) string {
 	return string(result)
 }
 
-
-//获取随机数  base32
+// 获取随机数  base32
 func GetRandomBase32(n int) string {
 	str := "234567abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
@@ -65,34 +64,34 @@ func GetRandomBase32(n int) string {
 	return string(result)
 }
 
-//生成区间随机数
+// 生成区间随机数
 func RandInt(min, max int) int {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return r.Intn(max-min) + min
 }
 
-//sha1加密
+// sha1加密
 func Sha1En(data string) string {
-	t := sha1.New()///产生一个散列值得方式
-	_,_=io.WriteString(t, data)
+	t := sha1.New() ///产生一个散列值得方式
+	_, _ = io.WriteString(t, data)
 	return fmt.Sprintf("%x", t.Sum(nil))
 }
 
-//对字符串进行MD5哈希
+// 对字符串进行MD5哈希
 func Md5En(data string) string {
 	t := md5.New()
-	_,_=io.WriteString(t, data)
+	_, _ = io.WriteString(t, data)
 	return fmt.Sprintf("%x", t.Sum(nil))
 }
 
-//生成32位md5字串
+// 生成32位md5字串
 func GetMd5String(s string) string {
 	h := md5.New()
 	h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-//自定义唯一id
+// 自定义唯一id
 func GetUniqueId() string {
 	cur := time.Now()
 	timestamps := cur.UnixNano()
@@ -100,13 +99,14 @@ func GetUniqueId() string {
 	return Md5En(uid)
 }
 
-//自定义唯一id
+// 自定义唯一id
 func OrderUniqueId() string {
 	cur := time.Now()
 	timestamps := cur.UnixNano() / 1000000 //获取毫秒
 	return strconv.FormatInt(timestamps, 10) + GetRandomNum(5)
 }
-//查找某值是否在数组中
+
+// 查找某值是否在数组中
 func InArrayString(v string, m *[]string) bool {
 	for _, value := range *m {
 		if value == v {
@@ -116,7 +116,7 @@ func InArrayString(v string, m *[]string) bool {
 	return false
 }
 func IpStringToInt(ipstring string) int {
-	if net.ParseIP(ipstring)==nil {
+	if net.ParseIP(ipstring) == nil {
 		return 0
 	}
 	ipSegs := strings.Split(ipstring, ".")
@@ -131,7 +131,7 @@ func IpStringToInt(ipstring string) int {
 	return ipInt
 }
 
-func IpIntToString(ipInt int) string{
+func IpIntToString(ipInt int) string {
 	var bytes [4]byte
 	bytes[0] = byte(ipInt & 0xFF)
 	bytes[1] = byte((ipInt >> 8) & 0xFF)
@@ -156,7 +156,8 @@ func RangeRand(min, max int64) int64 {
 		return min + result.Int64()
 	}
 }
-//整数区间的随机数
+
+// 整数区间的随机数
 func RandInt64(min, max int64) int64 {
 	if min >= max || min == 0 || max == 0 {
 		return max
