@@ -5,7 +5,7 @@ import (
 	"net/url"
 	conf "niuNiuWhiteBoardBackend/sso/config"
 	"niuNiuWhiteBoardBackend/sso/login"
-	"niuNiuWhiteBoardBackend/utils/common"
+	"niuNiuWhiteBoardBackend/sso/utils"
 )
 
 func main() {
@@ -39,7 +39,7 @@ func Auth(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
-	if common.InArrayString(u.Path, &conf.Cfg.Routes) {
+	if utils.InArrayString(u.Path, &conf.Cfg.Routes) {
 		c.Next()
 		return
 	}

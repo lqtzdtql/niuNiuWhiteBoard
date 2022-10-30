@@ -6,7 +6,7 @@ import (
 	conf "niuNiuWhiteBoardBackend/sso/config"
 	"niuNiuWhiteBoardBackend/sso/models"
 	"niuNiuWhiteBoardBackend/sso/response"
-	"niuNiuWhiteBoardBackend/utils/common"
+	"niuNiuWhiteBoardBackend/sso/utils"
 	"strconv"
 	"time"
 
@@ -58,7 +58,7 @@ func Login(c *gin.Context) {
 		response.ShowError(c, "mobile_not_exists")
 		return
 	}
-	if common.Sha1En(userMobile.Passwd) != model.Passwd {
+	if utils.Sha1En(userMobile.Passwd) != model.Passwd {
 		response.ShowError(c, "login_error")
 		return
 	}
@@ -96,12 +96,12 @@ func SignupByMobile(c *gin.Context) {
 		return
 	}
 
-	model.Passwd = common.Sha1En(userMobile.Passwd)
+	model.Passwd = utils.Sha1En(userMobile.Passwd)
 	model.CreatedTime = time.Now().Unix()
 	model.UpdatedTime = time.Now().Unix()
 
 	traceModel := models.Trace{CreatedTime: model.CreatedTime}
-	traceModel.Ip = common.IpStringToInt(GetClientIp(c))
+	traceModel.Ip = utils.IpStringToInt(GetClientIp(c))
 
 	deviceModel := models.Device{CreatedTime: model.CreatedTime, Ip: traceModel.Ip, Client: c.GetHeader("User-Agent")}
 	_, err := model.Add(&traceModel, &deviceModel)
