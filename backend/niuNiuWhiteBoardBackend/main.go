@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"net/url"
-	conf "niuNiuWhiteBoardBackend/sso/config"
+	"niuNiuWhiteBoardBackend/config"
 	"niuNiuWhiteBoardBackend/sso/login"
 	"niuNiuWhiteBoardBackend/sso/utils"
 )

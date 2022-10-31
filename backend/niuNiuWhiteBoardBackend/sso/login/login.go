@@ -3,9 +3,9 @@ package login
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	conf "niuNiuWhiteBoardBackend/sso/config"
-	"niuNiuWhiteBoardBackend/sso/models"
-	"niuNiuWhiteBoardBackend/sso/response"
+	"niuNiuWhiteBoardBackend/common/response"
+	"niuNiuWhiteBoardBackend/config"
+	models2 "niuNiuWhiteBoardBackend/models"
 	"niuNiuWhiteBoardBackend/sso/utils"
 	"strconv"
 	"time"
@@ -53,7 +53,7 @@ func Login(c *gin.Context) {
 		response.ShowError(c, "bindJSON err")
 		return
 	}
-	model := models.Users{Mobile: userMobile.Mobile}
+	model := models2.Users{Mobile: userMobile.Mobile}
 	if has := model.GetRow(); !has {
 		response.ShowError(c, "mobile_not_exists")
 		return
@@ -90,7 +90,7 @@ func SignupByMobile(c *gin.Context) {
 		response.ShowError(c, "BindJSON err")
 		return
 	}
-	model := models.Users{Mobile: userMobile.Mobile}
+	model := models2.Users{Mobile: userMobile.Mobile}
 	if has := model.GetRow(); has {
 		response.ShowError(c, "mobile_exists")
 		return
@@ -100,10 +100,10 @@ func SignupByMobile(c *gin.Context) {
 	model.CreatedTime = time.Now().Unix()
 	model.UpdatedTime = time.Now().Unix()
 
-	traceModel := models.Trace{CreatedTime: model.CreatedTime}
+	traceModel := models2.Trace{CreatedTime: model.CreatedTime}
 	traceModel.Ip = utils.IpStringToInt(GetClientIp(c))
 
-	deviceModel := models.Device{CreatedTime: model.CreatedTime, Ip: traceModel.Ip, Client: c.GetHeader("User-Agent")}
+	deviceModel := models2.Device{CreatedTime: model.CreatedTime, Ip: traceModel.Ip, Client: c.GetHeader("User-Agent")}
 	_, err := model.Add(&traceModel, &deviceModel)
 	if err != nil {
 		fmt.Println(err)
@@ -114,11 +114,11 @@ func SignupByMobile(c *gin.Context) {
 	return
 }
 
-func DoLogin(c *gin.Context, user models.Users) error {
+func DoLogin(c *gin.Context, user models2.Users) error {
 	secure := IsHttps(c)
 	if conf.Cfg.OpenJwt { //返回jwt
 		customClaims := &CustomClaims{
-			UserId: user.Id,
+			UserId: user.ID,
 			StandardClaims: jwt.StandardClaims{
 				ExpiresAt: time.Now().Add(time.Duration(MAXAGE) * time.Second).Unix(), // 过期时间，必须设置
 			},
@@ -128,7 +128,7 @@ func DoLogin(c *gin.Context, user models.Users) error {
 			return err
 		}
 		refreshClaims := &CustomClaims{
-			UserId: user.Id,
+			UserId: user.ID,
 			StandardClaims: jwt.StandardClaims{
 				ExpiresAt: time.Now().Add(time.Duration(MAXAGE+1800) * time.Second).Unix(), // 过期时间，必须设置
 			},
@@ -142,7 +142,7 @@ func DoLogin(c *gin.Context, user models.Users) error {
 		c.SetCookie(ACCESS_TOKEN, accessToken, MAXAGE, "/", "", secure, true)
 		c.SetCookie(REFRESH_TOKEN, refreshToken, MAXAGE, "/", "", secure, true)
 	}
-	id := strconv.Itoa(int(user.Id))
+	id := strconv.Itoa(int(user.ID))
 	c.SetCookie(COOKIE_TOKEN, id, MAXAGE, "/", "", secure, true)
 
 	return nil
@@ -178,8 +178,8 @@ func (cc *CustomClaims) MakeToken() (string, error) {
 func Info(c *gin.Context) {
 	uid := c.MustGet("uid").(int64)
 	fmt.Println(uid)
-	model := models.Users{}
-	model.Id = uid
+	model := models2.Users{}
+	model.ID = uid
 	row, err := model.GetRowById()
 	if err != nil {
 		fmt.Println(err)
