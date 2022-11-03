@@ -216,4 +216,17 @@ export class Util {
     }
     return result;
   }
+
+  static addListener(element, eventName, handler) {
+    element.addEventListener(eventName, handler, false);
+  }
+
+  static removeListener(element, eventName, handler) {
+    element.removeEventListener(eventName, handler, false);
+  }
+
+  /** 弧度转角度，注意 canvas 中用的都是弧度，但是角度对我们来说比较直观 */
+  static radiansToDegrees(radians: number): number {
+    return radians / PiBy180;
+  }
 }

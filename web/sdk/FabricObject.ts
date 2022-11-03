@@ -559,4 +559,109 @@ export class FabricObject extends EventCenter {
     });
     return this;
   }
+
+  /**
+   * 平移坐标系到中心点
+   * @param center
+   * @param {string} originX  left | center | right
+   * @param {string} originY  top | center | bottom
+   * @returns
+   */
+  translateToOriginPoint(center: Point, originX: string, originY: string): Point {
+    let x = center.x,
+      y = center.y;
+
+    // Get the point coordinates
+    if (originX === 'left') {
+      x = center.x - this.getWidth() / 2;
+    } else if (originX === 'right') {
+      x = center.x + this.getWidth() / 2;
+    }
+    if (originY === 'top') {
+      y = center.y - this.getHeight() / 2;
+    } else if (originY === 'bottom') {
+      y = center.y + this.getHeight() / 2;
+    }
+
+    // Apply the rotation to the point (it's already scaled properly)
+    return Util.rotatePoint(new Point(x, y), center, Util.degreesToRadians(this.angle));
+  }
+
+  /** 转换成本地坐标 */
+  toLocalPoint(point: Point, originX: string, originY: string): Point {
+    let center = this.getCenterPoint();
+
+    let x, y;
+    if (originX !== undefined && originY !== undefined) {
+      if (originX === 'left') {
+        x = center.x - this.getWidth() / 2;
+      } else if (originX === 'right') {
+        x = center.x + this.getWidth() / 2;
+      } else {
+        x = center.x;
+      }
+
+      if (originY === 'top') {
+        y = center.y - this.getHeight() / 2;
+      } else if (originY === 'bottom') {
+        y = center.y + this.getHeight() / 2;
+      } else {
+        y = center.y;
+      }
+    } else {
+      x = this.left;
+      y = this.top;
+    }
+
+    return Util.rotatePoint(new Point(point.x, point.y), center, -Util.degreesToRadians(this.angle)).subtractEquals(
+      new Point(x, y),
+    );
+  }
+
+  /**
+   * 根据物体的 origin 来设置物体的位置
+   * @method setPositionByOrigin
+   * @param {Point} pos
+   * @param {string} originX left | center | right
+   * @param {string} originY top | center | bottom
+   */
+  setPositionByOrigin(pos: Point, originX: string, originY: string) {
+    let center = this.translateToCenterPoint(pos, originX, originY);
+    let position = this.translateToOriginPoint(center, this.originX, this.originY);
+    // console.log(`更新缩放的物体位置:[${position.x}，${position.y}]`);
+    this.set('left', position.x);
+    this.set('top', position.y);
+  }
+
+  /**
+   * 物体与框选区域是否相交，用框选区域的四条边分别与物体的四条边求交
+   * @param {Point} selectionTL 拖蓝框选区域左上角的点
+   * @param {Point} selectionBR 拖蓝框选区域右下角的点
+   * @returns {boolean}
+   */
+  intersectsWithRect(selectionTL: Point, selectionBR: Point): boolean {
+    let oCoords = this.oCoords,
+      tl = new Point(oCoords.tl.x, oCoords.tl.y),
+      tr = new Point(oCoords.tr.x, oCoords.tr.y),
+      bl = new Point(oCoords.bl.x, oCoords.bl.y),
+      br = new Point(oCoords.br.x, oCoords.br.y);
+
+    let intersection = Intersection.intersectPolygonRectangle([tl, tr, br, bl], selectionTL, selectionBR);
+    return intersection.status === 'Intersection';
+  }
+
+  /**
+   * 物体是否被框选区域包含
+   * @param {Point} selectionTL 拖蓝框选区域左上角的点
+   * @param {Point} selectionBR 拖蓝框选区域右下角的点
+   * @returns {boolean}
+   */
+  isContainedWithinRect(selectionTL: Point, selectionBR: Point): boolean {
+    let oCoords = this.oCoords,
+      tl = new Point(oCoords.tl.x, oCoords.tl.y),
+      tr = new Point(oCoords.tr.x, oCoords.tr.y),
+      bl = new Point(oCoords.bl.x, oCoords.bl.y);
+
+    return tl.x > selectionTL.x && tr.x < selectionBR.x && tl.y > selectionTL.y && bl.y < selectionBR.y;
+  }
 }

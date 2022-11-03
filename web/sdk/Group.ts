@@ -54,7 +54,7 @@ export class Group extends FabricObject {
     object.set('scaleY', object.get('scaleY') * this.get('scaleY'));
 
     object.setCoords();
-    object.hasControls = object.orignHasControls;
+    object.hasControls = object.originHasControls;
     // delete object.__origHasControls;
     object.setActive(false);
     object.setCoords();
@@ -130,7 +130,7 @@ export class Group extends FabricObject {
       object.setCoords();
 
       // 当有选中组的时候，不显示物体的控制点
-      object.orignHasControls = object.hasControls;
+      object.originHasControls = object.hasControls;
       object.hasControls = false;
     });
   }
@@ -150,6 +150,14 @@ export class Group extends FabricObject {
     this.objects.push(object);
     this._calcBounds();
     this._updateObjectsCoords();
+    return this;
+  }
+
+  /** 重新设置当前组中所有的物体的边框、控制点、位置和大小等 */
+  setObjectsCoords(): Group {
+    this.objects.forEach((object) => {
+      object.setCoords();
+    });
     return this;
   }
 }
