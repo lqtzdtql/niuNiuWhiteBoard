@@ -2,13 +2,10 @@ package utils
 
 import (
 	"crypto/md5"
-	crand "crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"math"
-	"math/big"
 	"math/rand"
 	"net"
 	"strconv"
@@ -115,6 +112,7 @@ func InArrayString(v string, m *[]string) bool {
 	}
 	return false
 }
+
 func IpStringToInt(ipstring string) int {
 	if net.ParseIP(ipstring) == nil {
 		return 0
@@ -129,39 +127,4 @@ func IpStringToInt(ipstring string) int {
 		pos -= 8
 	}
 	return ipInt
-}
-
-func IpIntToString(ipInt int) string {
-	var bytes [4]byte
-	bytes[0] = byte(ipInt & 0xFF)
-	bytes[1] = byte((ipInt >> 8) & 0xFF)
-	bytes[2] = byte((ipInt >> 16) & 0xFF)
-	bytes[3] = byte((ipInt >> 24) & 0xFF)
-	return net.IPv4(bytes[3], bytes[2], bytes[1], bytes[0]).String()
-}
-
-// 生成区间[-m, n]的安全随机数
-func RangeRand(min, max int64) int64 {
-	if min > max {
-		panic("the min is greater than max!")
-	}
-	if min < 0 {
-		f64Min := math.Abs(float64(min))
-		i64Min := int64(f64Min)
-		result, _ := crand.Int(crand.Reader, big.NewInt(max+1+i64Min))
-
-		return result.Int64() - i64Min
-	} else {
-		result, _ := crand.Int(crand.Reader, big.NewInt(max-min+1))
-		return min + result.Int64()
-	}
-}
-
-// 整数区间的随机数
-func RandInt64(min, max int64) int64 {
-	if min >= max || min == 0 || max == 0 {
-		return max
-	}
-
-	return rand.Int63n(max-min) + min
 }
