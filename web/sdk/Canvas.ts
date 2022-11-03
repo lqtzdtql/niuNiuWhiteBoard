@@ -28,9 +28,9 @@ export class Canvas extends EventCenter {
   public containerClass: string = 'canvas-container';
 
   /** 左键拖拽的产生的选择区域，拖蓝区域 */
-  private _groupSelector: GroupSelector | null;
+  private _groupSelector: GroupSelector | null = null;
   /** 当前选中的组 */
-  public _activeGroup: Group | null;
+  public _activeGroup: Group | null = null;
 
   /** 整个画布到上面和左边的偏移量 */
   private _offset: Offset;
@@ -40,8 +40,6 @@ export class Canvas extends EventCenter {
   private _currentTransform: CurrentTransform;
   /** 当前激活物体 */
   private _activeObject;
-  /** 变换之前的中心点方式 */
-  // private _previousOriginX;
   private _previousPointer: Pos;
 
   constructor(el: HTMLCanvasElement, options) {
@@ -57,15 +55,17 @@ export class Canvas extends EventCenter {
   }
 
   /** 初始化 _objects、lower-canvas 宽高、options 赋值 */
-  _initStatic(el: HTMLCanvasElement, options) {
+  _initStatic(el: HTMLCanvasElement, options?) {
     this._objects = [];
 
     this._createLowerCanvas(el);
-    this._initOptions(options);
-
+    if (options) {
+      this._initOptions(options);
+    }
     this.calcOffset();
   }
 
+  /** 创建下层画布 */
   _createLowerCanvas(el: HTMLCanvasElement) {
     this.lowerCanvasEl = el;
     Util.addClass(this.lowerCanvasEl, 'lower-canvas');
@@ -73,6 +73,7 @@ export class Canvas extends EventCenter {
     this.contextContainer = this.lowerCanvasEl.getContext('2d') as CanvasRenderingContext2D;
   }
 
+  /**绑定画布样式 */
   _applyCanvasStyle(el: HTMLCanvasElement) {
     let width = this.width || el.width;
     let height = this.height || el.height;
@@ -157,9 +158,13 @@ export class Canvas extends EventCenter {
     Util.removeListener(this.upperCanvasEl, 'mousemove', this._onMouseMove);
   }
 
+  _onResize() {
+    this.calcOffset();
+  }
+
   __onMouseDown(e: MouseEvent) {
     // 只处理左键点击，要么是拖蓝事件、要么是点选事件
-    let isLeftClick = 'which' in e ? e.which === 1 : e.button === 0;
+    let isLeftClick = e?.which === 1;
     if (!isLeftClick) return;
 
     // 这个是为了保险起见，ignore if some object is being transformed at this moment
@@ -310,7 +315,7 @@ export class Canvas extends EventCenter {
     let isObjectInGroup = activeGroup && object.type !== 'group' && activeGroup.contains(object);
 
     if (isObjectInGroup) {
-      x -= activeGroup.left;
+      x -= activeGroup?.left;
       y -= activeGroup.top;
     }
     return { x, y };
@@ -419,5 +424,56 @@ export class Canvas extends EventCenter {
     // if (activeGroup) {
     //     activeGroup.saveCoords();
     // }
+  }
+
+  _resetObjectTransform(target) {
+    target.scaleX = 1;
+    target.scaleY = 1;
+    target.setAngle(0);
+  }
+
+  setActiveObject(object: FabricObject, e: MouseEvent): Canvas {
+    if (this._activeObject) {
+      // 如果当前有激活物体
+      this._activeObject.setActive(false);
+    }
+    this._activeObject = object;
+    object.setActive(true);
+
+    this.renderAll();
+
+    // this.emit('object:selected', { target: object, e });
+    // object.emit('selected', { e });
+    return this;
+  }
+
+  /** 大部分是在 lower-canvas 上先画未激活物体，再画激活物体 */
+  renderAll(allOnTop: boolean = false): Canvas {
+    let canvasToDrawOn = this[allOnTop ? 'contextTop' : 'contextContainer'];
+
+    if (this.contextTop) {
+      this.clearContext(this.contextTop);
+    }
+
+    if (!allOnTop) {
+      this.clearContext(canvasToDrawOn);
+    }
+
+    this.emit('before:render');
+
+    if (this.backgroundColor) {
+      canvasToDrawOn.fillStyle = this.backgroundColor;
+      canvasToDrawOn.fillRect(0, 0, this.width, this.height);
+    }
+
+    // 先绘制未激活物体，再绘制激活物体
+    const sortedObjects = this._chooseObjectsToRender();
+    for (let i = 0, len = sortedObjects.length; i < len; ++i) {
+      this._draw(canvasToDrawOn, sortedObjects[i]);
+    }
+
+    this.emit('after:render');
+
+    return this;
   }
 }
