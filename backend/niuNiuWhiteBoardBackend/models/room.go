@@ -199,6 +199,27 @@ func GetRoomRTC(c *gin.Context) {
 		"token":     token,
 	})
 }
+func ListRoom(c *gin.Context) {
+	db := c.MustGet("db").(*xorm.Engine)
+	var roomList []RoomRaw
+	//获取房间列表
+	err := db.Table(RoomTable).Iterate(new(RoomRaw), func(i int, bean interface{}) error {
+		p := bean.(*RoomRaw)
+		roomList = append(roomList, *p)
+		return nil
+	})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "get roomlist failed", "code": 401})
+		log.Println("get roomlist failed")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "get roomlist success",
+		"roomlist": roomList,
+		"code":     200,
+	})
+
+}
 
 func EnterRoom(c *gin.Context) {
 	uuid := c.Param("uuid")
@@ -300,7 +321,7 @@ func ExitRoom(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "退房成功",
+		"message": "enter room success",
 		"code":    200,
 	})
 }

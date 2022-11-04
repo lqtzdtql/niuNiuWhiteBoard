@@ -106,7 +106,7 @@ func Logout(c *gin.Context) {
 	currentUser.UserState = UserStateOffline
 	c.JSON(http.StatusOK, gin.H{
 		"message": "logout success",
-		"token":   200,
+		"code":    200,
 	})
 	return
 }

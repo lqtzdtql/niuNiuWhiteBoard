@@ -32,14 +32,16 @@ func main() {
 
 	r.POST("/signup", models.SignupByMobile)
 	r.POST("/login", models.Login)
-	api := r.Group("v1", models.Auth)
+	v1 := r.Group("v1", models.Auth)
 	{
-		api.GET("/userinfo/:uuid", models.Info)
-		api.POST("/rooms", models.CreateRoom)
-		api.GET("/rooms/:uuid", models.EnterRoom, models.GetRoomInfo)
-		api.GET("/rooms/:uuid/exit", models.ExitRoom)
-		api.GET("/rooms/:uuid/rtc", models.EnterRoom, models.GetRoomRTC)
-		api.GET("/logout", models.Logout)
+		v1.GET("/userinfo/:uuid", models.Info)
+
+		v1.POST("/rooms", models.CreateRoom)
+		v1.GET("/roomlist", models.ListRoom)
+		v1.GET("/rooms/:uuid", models.EnterRoom, models.GetRoomInfo)
+		v1.GET("/rooms/:uuid/exit", models.ExitRoom)
+		v1.GET("/rooms/:uuid/rtc", models.EnterRoom, models.GetRoomRTC)
+		v1.GET("/logout", models.Logout)
 	}
 
 	r.Run(":8282") // listen and serve on 0.0.0.0:8080
