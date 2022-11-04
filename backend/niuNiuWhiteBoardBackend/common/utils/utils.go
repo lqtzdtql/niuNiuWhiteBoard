@@ -3,39 +3,13 @@ package utils
 import (
 	"crypto/md5"
 	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"io"
 	"math/rand"
-	"net"
-	"strconv"
-	"strings"
+	"niuNiuWhiteBoardBackend/models"
 	"time"
 )
-
-// 获取随机数 纯文字
-func GetRandomString(n int) string {
-	str := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	bytes := []byte(str)
-	result := []byte{}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < n; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
-	}
-	return string(result)
-}
-
-// 获取随机数  数字和文字
-func GetRandomBoth(n int) string {
-	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	bytes := []byte(str)
-	result := []byte{}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < n; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
-	}
-	return string(result)
-}
 
 // 获取随机数  纯数字
 func GetRandomNum(n int) string {
@@ -61,12 +35,6 @@ func GetRandomBase32(n int) string {
 	return string(result)
 }
 
-// 生成区间随机数
-func RandInt(min, max int) int {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return r.Intn(max-min) + min
-}
-
 // sha1加密
 func Sha1En(data string) string {
 	t := sha1.New() ///产生一个散列值得方式
@@ -81,28 +49,6 @@ func Md5En(data string) string {
 	return fmt.Sprintf("%x", t.Sum(nil))
 }
 
-// 生成32位md5字串
-func GetMd5String(s string) string {
-	h := md5.New()
-	h.Write([]byte(s))
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-// 自定义唯一id
-func GetUniqueId() string {
-	cur := time.Now()
-	timestamps := cur.UnixNano()
-	uid := strconv.FormatInt(timestamps, 10) + GetRandomNum(5)
-	return Md5En(uid)
-}
-
-// 自定义唯一id
-func OrderUniqueId() string {
-	cur := time.Now()
-	timestamps := cur.UnixNano() / 1000000 //获取毫秒
-	return strconv.FormatInt(timestamps, 10) + GetRandomNum(5)
-}
-
 // 查找某值是否在数组中
 func InArrayString(v string, m *[]string) bool {
 	for _, value := range *m {
@@ -113,18 +59,10 @@ func InArrayString(v string, m *[]string) bool {
 	return false
 }
 
-func IpStringToInt(ipstring string) int {
-	if net.ParseIP(ipstring) == nil {
-		return 0
+// 判断是否https
+func IsHttps(c *gin.Context) bool {
+	if c.GetHeader(models.HEADER_FORWARDED_PROTO) == "https" || c.Request.TLS != nil {
+		return true
 	}
-	ipSegs := strings.Split(ipstring, ".")
-	var ipInt int = 0
-	var pos uint = 24
-	for _, ipSeg := range ipSegs {
-		tempInt, _ := strconv.Atoi(ipSeg)
-		tempInt = tempInt << pos
-		ipInt = ipInt | tempInt
-		pos -= 8
-	}
-	return ipInt
+	return false
 }

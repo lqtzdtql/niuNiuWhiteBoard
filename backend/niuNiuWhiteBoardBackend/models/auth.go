@@ -10,18 +10,6 @@ import (
 	conf "niuNiuWhiteBoardBackend/config"
 )
 
-func GetParam(c *gin.Context, key string) (string, bool) {
-	val := c.GetHeader(key)
-	if val != "" {
-		return val, true
-	}
-	val, err := c.Cookie(key)
-	if err != nil {
-		return "", false
-	}
-	return val, true
-}
-
 func Auth(c *gin.Context) {
 	db := c.MustGet("db").(*xorm.Engine)
 	u, err := url.Parse(c.Request.RequestURI)

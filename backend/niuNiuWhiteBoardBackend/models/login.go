@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"niuNiuWhiteBoardBackend/common/utils"
 	conf "niuNiuWhiteBoardBackend/config"
-	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -40,6 +39,11 @@ type UserMobilePasswd struct {
 
 type Mobile struct {
 	Mobile string `form:"mobile" json:"mobile" binding:"required"`
+}
+
+type CustomClaims struct {
+	UserId int64
+	jwt.StandardClaims
 }
 
 // 手机 + 密码登录
@@ -98,7 +102,7 @@ func Login(c *gin.Context) {
 // 注销登录
 func Logout(c *gin.Context) {
 	currentUser := c.MustGet("currentUser").(*User)
-	secure := IsHttps(c)
+	secure := utils.IsHttps(c)
 
 	c.SetCookie(COOKIE_TOKEN, "", -1, "/", "", secure, true)
 	c.SetCookie(ACCESS_TOKEN, "", -1, "/", "", secure, true)
@@ -164,25 +168,6 @@ func SignupByMobile(c *gin.Context) {
 	return
 }
 
-// 判断是否https
-func IsHttps(c *gin.Context) bool {
-	if c.GetHeader(HEADER_FORWARDED_PROTO) == "https" || c.Request.TLS != nil {
-		return true
-	}
-	return false
-}
-
-type CustomClaims struct {
-	UserId int64
-	jwt.StandardClaims
-}
-
-// 产生token
-func (cc *CustomClaims) MakeToken() (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, cc)
-	return token.SignedString([]byte(SECRETKEY))
-}
-
 func Info(c *gin.Context) {
 	uuid := c.Param("uuid")
 	println(uuid)
@@ -210,7 +195,6 @@ func Info(c *gin.Context) {
 }
 
 func DoLogin(c *gin.Context, user User) error {
-	secure := IsHttps(c)
 	if conf.Cfg.OpenJwt { //返回jwt
 		customClaims := &CustomClaims{
 			UserId: user.ID,
@@ -234,26 +218,6 @@ func DoLogin(c *gin.Context, user User) error {
 		}
 		c.Header(ACCESS_TOKEN, accessToken)
 		c.Header(REFRESH_TOKEN, refreshToken)
-		c.SetCookie(ACCESS_TOKEN, accessToken, MAXAGE, "/", "", secure, true)
-		c.SetCookie(REFRESH_TOKEN, refreshToken, MAXAGE, "/", "", secure, true)
 	}
-	id := strconv.Itoa(int(user.ID))
-	c.SetCookie(COOKIE_TOKEN, id, MAXAGE, "/", "", secure, true)
-
 	return nil
-}
-
-// 解析token
-func ParseToken(tokenString string) (*CustomClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(SECRETKEY), nil
-	})
-	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
-		return claims, nil
-	} else {
-		return nil, err
-	}
 }

@@ -7,6 +7,8 @@ const (
 	UserStateOffline = "offline"
 )
 
+const UsersTable = "users"
+
 type User struct {
 	ID          int64     `json:"id"  xorm:"id pk autoincr comment('主键') BIGINT(20)"`
 	UUID        string    `json:"uuid" xorm:"uuid not null unique 'uuid' comment('用户唯一标识符') index VARCHAR(128)"`
@@ -24,5 +26,3 @@ type UserRow struct {
 	Name   string `json:"name" xorm:"name not null default '' comment('用户名') VARCHAR(50)"`
 	Mobile string `json:"mobile" xorm:"mobile not null default '' comment('手机号') VARCHAR(20)"`
 }
-
-const UsersTable = "users"
