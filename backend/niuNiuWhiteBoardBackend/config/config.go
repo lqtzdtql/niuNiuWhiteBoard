@@ -13,11 +13,9 @@ type Config struct {
 }
 
 type QiniuService struct {
-	AccessKey    string `json:"access_key"`
-	SecretKey    string `json:"secret_key"`
-	Bucket       string `json:"bucket"`
-	BucketDomain string `json:"bucket_domain"`
-	RTCAppID     string `json:"rtc_app_id"`
+	AccessKey string `json:"access_key"`
+	SecretKey string `json:"secret_key"`
+	RTCAppID  string `json:"rtc_app_id"`
 }
 
 type Whiteboard struct {

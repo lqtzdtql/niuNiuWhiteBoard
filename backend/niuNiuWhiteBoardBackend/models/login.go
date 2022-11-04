@@ -18,8 +18,7 @@ import (
 const (
 	ACCESS_TOKEN           = "Access_Token"
 	REFRESH_TOKEN          = "Refresh_Token"
-	COOKIE_TOKEN           = "UserId"
-	HEADER_AUTH            = "Authorization"
+	COOKIE_TOKEN           = "User_UUID"
 	HEADER_FORWARDED_PROTO = "X-Forwarded-Proto"
 )
 
@@ -31,11 +30,7 @@ const (
 type UserMobile struct {
 	Mobile string `form:"mobile" json:"mobile" binding:"required"`
 	Passwd string `form:"passwd" json:"passwd" binding:"required,max=20,min=6"`
-	Code   string `form:"code" json:"code" binding:"required,len=6"`
-}
-type UserMobileCode struct {
-	Mobile string `form:"mobile" json:"mobile" binding:"required"`
-	Code   string `form:"code" json:"code" binding:"required,len=6"`
+	Name   string `form:"name" json:"name" binding:"required"`
 }
 
 type UserMobilePasswd struct {
@@ -53,25 +48,25 @@ func Login(c *gin.Context) {
 
 	var userMobile UserMobilePasswd
 	if err := c.BindJSON(&userMobile); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "login invalid args", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "login invalid args", "code": 401})
 		log.Println("login invalid args")
 		return
 	}
 	user := User{Mobile: userMobile.Mobile}
-	if has, err := db.Table(UsersTable).Get(&user); err != nil {
-		if !has {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile not exist", "code": 401})
-			log.Println("mobile not exist")
-		} else {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server db" + err.Error(), "code": 501})
-			log.Println("server db" + err.Error())
-		}
+	has, err := db.Table(UsersTable).Get(&user)
+	if !has {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile not exist", "code": 401})
+		log.Println("mobile not exist")
+		return
+	} else if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 500})
+		log.Println("server database err:  " + err.Error())
 		return
 	}
 
 	if utils.Sha1En(userMobile.Passwd) != user.Passwd {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "password err", "code": 401})
-		log.Println("password err")
+		log.Println("password error")
 		return
 	}
 
@@ -82,9 +77,18 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	userRow := UserRow{}
+	_, err = db.Table(UsersTable).Where("uuid=?", user.UUID).Get(&userRow)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
+		log.Println("server database err:  " + err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "login success",
-		"code":    200,
+		"message":   "login success",
+		"user_info": userRow,
+		"code":      200,
 	})
 	c.Set("currentUser", user)
 	c.Next()
@@ -93,13 +97,13 @@ func Login(c *gin.Context) {
 
 // 注销登录
 func Logout(c *gin.Context) {
-	user := c.MustGet("user").(*User)
+	currentUser := c.MustGet("currentUser").(*User)
 	secure := IsHttps(c)
 
 	c.SetCookie(COOKIE_TOKEN, "", -1, "/", "", secure, true)
 	c.SetCookie(ACCESS_TOKEN, "", -1, "/", "", secure, true)
 	c.SetCookie(REFRESH_TOKEN, "", -1, "/", "", secure, true)
-	user.UserState = UserStateOffline
+	currentUser.UserState = UserStateOffline
 	c.JSON(http.StatusOK, gin.H{
 		"message": "logout success",
 		"token":   200,
@@ -112,37 +116,50 @@ func SignupByMobile(c *gin.Context) {
 	db := c.MustGet("db").(*xorm.Engine)
 	var userMobile UserMobile
 	if err := c.BindJSON(&userMobile); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "login invalid args", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "login invalid args", "code": 401})
 		log.Println("login invalid args")
 		return
 	}
 	fmt.Println(userMobile)
-	user := User{Mobile: userMobile.Mobile}
+	user := User{
+		Mobile: userMobile.Mobile,
+		Name:   userMobile.Name,
+	}
 	has, err := db.Table(UsersTable).Exist(&user)
 	if has {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile has existed", "code": 401})
-		log.Println("mobile has existed")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile or user_name has existed", "code": 401})
+		log.Println("mobile or user_name has existed")
 		return
 	}
 	if err != nil && !has {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server db" + err.Error(), "code": 501})
-		log.Println("server db " + err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
+		log.Println("server database err:  " + err.Error())
 		return
 	}
 
 	user.UUID = ulid.Make().String()
 	user.Passwd = utils.Sha1En(userMobile.Passwd)
-	user.CreatedTime = time.Now().Unix()
-	user.UpdatedTime = time.Now().Unix()
+	user.CreatedTime = time.Now()
+	user.UpdatedTime = time.Now()
 
 	if _, err = db.Table(UsersTable).Insert(user); err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "register failed", "code": 401})
 		log.Println("register failed")
 		return
 	}
+
+	userRow := UserRow{}
+	_, err = db.Table(UsersTable).Where("uuid=?", user.UUID).Get(&userRow)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err: " + err.Error(), "code": 501})
+		log.Println("server database err:" + err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "register success",
-		"code":    200,
+		"message":   "register success",
+		"user_info": userRow,
+		"code":      200,
 	})
 	return
 }
@@ -180,8 +197,8 @@ func Info(c *gin.Context) {
 		log.Println("user not exist")
 		return
 	} else if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server db" + err.Error(), "code": 501})
-		log.Println("server db" + err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
+		log.Println("server database err:  " + err.Error())
 		return
 	}
 	fmt.Println(userRow)
