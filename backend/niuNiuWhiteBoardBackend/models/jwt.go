@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -37,4 +38,12 @@ func GetParam(c *gin.Context, key string) (string, bool) {
 func (cc *CustomClaims) MakeToken() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, cc)
 	return token.SignedString([]byte(SECRETKEY))
+}
+
+// 判断是否https
+func IsHttps(c *gin.Context) bool {
+	if c.GetHeader(HEADER_FORWARDED_PROTO) == "https" || c.Request.TLS != nil {
+		return true
+	}
+	return false
 }

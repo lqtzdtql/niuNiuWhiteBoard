@@ -1,11 +1,13 @@
 package models
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/go-xorm/xorm"
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-xorm/xorm"
+
 	"niuNiuWhiteBoardBackend/common/utils"
 	conf "niuNiuWhiteBoardBackend/config"
 )
@@ -52,13 +54,6 @@ func Auth(c *gin.Context) {
 			return
 		}
 		c.Next()
-		return
-	}
-	//cookie
-	_, err = c.Cookie(COOKIE_TOKEN)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "user not exist", "code": 401})
-		log.Println("user not exist")
 		return
 	}
 	c.Next()

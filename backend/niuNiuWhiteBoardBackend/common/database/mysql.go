@@ -1,12 +1,25 @@
 package database
 
 import (
+	"log"
+	conf "niuNiuWhiteBoardBackend/config"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"log"
 )
 
 var MEngine *xorm.Engine
+
+var Db = map[string]conf.DbConfig{
+	"db1": {
+		DriverName:   conf.Cfg.DbConfig.DriverName,
+		Dsn:          conf.Cfg.DbConfig.Dsn,
+		ShowSql:      conf.Cfg.DbConfig.ShowSql,
+		ShowExecTime: conf.Cfg.DbConfig.ShowExecTime,
+		MaxIdle:      conf.Cfg.DbConfig.MaxIdle,
+		MaxOpen:      conf.Cfg.DbConfig.MaxOpen,
+	},
+}
 
 func InitDatabase() (*xorm.Engine, error) {
 	if MEngine == nil {
@@ -21,24 +34,4 @@ func InitDatabase() (*xorm.Engine, error) {
 		return MEngine, nil
 	}
 	return MEngine, nil
-}
-
-type DbConfig struct {
-	DriverName   string
-	Dsn          string
-	ShowSql      bool
-	ShowExecTime bool
-	MaxIdle      int
-	MaxOpen      int
-}
-
-var Db = map[string]DbConfig{
-	"db1": {
-		DriverName:   "mysql",
-		Dsn:          "root:Gcx199815.@tcp(127.0.0.1:3306)/niuNiuWhiteBoard?charset=utf8mb4&parseTime=true&loc=Local",
-		ShowSql:      true,
-		ShowExecTime: false,
-		MaxIdle:      10,
-		MaxOpen:      200,
-	},
 }

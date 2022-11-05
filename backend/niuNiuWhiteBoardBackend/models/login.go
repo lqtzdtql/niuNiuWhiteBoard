@@ -1,17 +1,17 @@
 package models
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-xorm/xorm"
-	"github.com/oklog/ulid/v2"
 	"log"
 	"net/http"
-	"niuNiuWhiteBoardBackend/common/utils"
-	conf "niuNiuWhiteBoardBackend/config"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
+	"github.com/go-xorm/xorm"
+	"github.com/oklog/ulid/v2"
+
+	"niuNiuWhiteBoardBackend/common/utils"
+	conf "niuNiuWhiteBoardBackend/config"
 )
 
 const (
@@ -58,13 +58,14 @@ func Login(c *gin.Context) {
 	}
 	user := User{Mobile: userMobile.Mobile}
 	has, err := db.Table(UsersTable).Get(&user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 500})
+		log.Println("server database err:  " + err.Error())
+		return
+	}
 	if !has {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile not exist", "code": 401})
 		log.Println("mobile not exist")
-		return
-	} else if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 500})
-		log.Println("server database err:  " + err.Error())
 		return
 	}
 
@@ -102,7 +103,7 @@ func Login(c *gin.Context) {
 // 注销登录
 func Logout(c *gin.Context) {
 	currentUser := c.MustGet("currentUser").(*User)
-	secure := utils.IsHttps(c)
+	secure := IsHttps(c)
 
 	c.SetCookie(COOKIE_TOKEN, "", -1, "/", "", secure, true)
 	c.SetCookie(ACCESS_TOKEN, "", -1, "/", "", secure, true)
@@ -124,20 +125,20 @@ func SignupByMobile(c *gin.Context) {
 		log.Println("login invalid args")
 		return
 	}
-	fmt.Println(userMobile)
 	user := User{
 		Mobile: userMobile.Mobile,
 		Name:   userMobile.Name,
 	}
+
 	has, err := db.Table(UsersTable).Exist(&user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
+		log.Println("server database err:  " + err.Error())
+		return
+	}
 	if has {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile or user_name has existed", "code": 401})
 		log.Println("mobile or user_name has existed")
-		return
-	}
-	if err != nil && !has {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
-		log.Println("server database err:  " + err.Error())
 		return
 	}
 
@@ -177,19 +178,19 @@ func Info(c *gin.Context) {
 	userRow := UserRow{}
 	user.UUID = uuid
 	has, err := db.Table(UsersTable).Where("uuid=?", user.UUID).Get(&userRow)
-	if !has {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "user not exist", "code": 401})
-		log.Println("user not exist")
-		return
-	} else if err != nil {
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
 		log.Println("server database err:  " + err.Error())
 		return
 	}
-	fmt.Println(userRow)
+	if !has {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "user not exist", "code": 401})
+		log.Println("user not exist")
+		return
+	}
 	//隐藏手机号中间数字
 	s := userRow.Mobile
-	userRow.Mobile = string([]byte(s)[0:3]) + "****" + string([]byte(s)[6:])
+	userRow.Mobile = string([]byte(s)[0:3]) + "****" + string([]byte(s)[7:])
 	c.JSON(http.StatusOK, userRow)
 	return
 }

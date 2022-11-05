@@ -1,23 +1,26 @@
 package main
 
+import "C"
 import (
 	"github.com/gin-gonic/gin"
-	"log"
+
 	"niuNiuWhiteBoardBackend/common/database"
+	"niuNiuWhiteBoardBackend/common/log"
 	"niuNiuWhiteBoardBackend/config"
 	"niuNiuWhiteBoardBackend/models"
 )
 
 func main() {
+	log.InitLogger(conf.Cfg.LogConfig.Path, conf.Cfg.LogConfig.Level)
+	log.Logger.Info("config", log.Any("config", conf.Cfg))
 	//初始化数据
-	conf.Load()
 	gin.SetMode(gin.DebugMode) //开发环境
 	//gin.SetMode(gin.ReleaseMode) //线上环境
 
 	//初始化mysql
 	db, err := database.InitDatabase()
 	if err != nil {
-		log.Fatal("Database init fatal")
+		log.Logger.Fatal("Database init fatal")
 	}
 
 	r := gin.Default()
