@@ -19,7 +19,7 @@ CREATE TABLE `users` (
   `user_state` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '用户状态',
   `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
   `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
-  `deleted_time` timestamp COMMENT '删除时间'
+  `deleted_time` timestamp DEFAULT NULL COMMENT '删除时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `rooms` (
@@ -30,7 +30,7 @@ CREATE TABLE `rooms` (
     `type` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '房间类型',
     `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '建房时间',
     `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
-    `deleted_time` timestamp COMMENT '删除时间'
+    `deleted_time` timestamp DEFAULT NULL COMMENT '删除时间'
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `participants` (
@@ -41,7 +41,7 @@ CREATE TABLE `participants` (
     `permission` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '用户权限',
     `created_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '进房时间',
     `updated_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
-    `deleted_time` timestamp COMMENT '删除时间'
+    `deleted_time` timestamp DEFAULT NULL COMMENT '删除时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

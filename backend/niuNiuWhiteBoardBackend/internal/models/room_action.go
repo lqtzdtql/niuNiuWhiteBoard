@@ -14,12 +14,6 @@ import (
 	conf "niuNiuWhiteBoardBackend/config"
 )
 
-// CreateRoom quick start actions
-type RoomNameType struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
 func CreateRoom(c *gin.Context) {
 	currentUser := c.MustGet("currentUser").(*User)
 	db := c.MustGet("db").(*xorm.Engine)
@@ -288,6 +282,7 @@ func ExitRoom(c *gin.Context) {
 			return
 		}
 	}
+	// TODO: 房主退房逻辑，待定
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "退房成功",

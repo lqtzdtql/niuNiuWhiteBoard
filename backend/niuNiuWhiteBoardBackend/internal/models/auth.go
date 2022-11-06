@@ -26,30 +26,31 @@ func Auth(c *gin.Context) {
 	if conf.Cfg.OpenJwt {
 		accessToken, has := GetParam(c, ACCESS_TOKEN)
 		if !has {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "login failed", "code": 401})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "登录失败", "code": 401})
 			log.Println("login failed")
 			return
 		}
 		ret, err := ParseToken(accessToken)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "login failed", "code": 401})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "登录失败", "code": 401})
 			log.Println("login failed")
 			return
 		}
 		user := User{}
-		if has, err := db.Table(UsersTable).Where("id=?", ret.UserId).Get(&user); err != nil {
-			if !has {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile not exist", "code": 401})
-				log.Println("mobile not exist")
-			} else {
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server db" + err.Error(), "code": 501})
-				log.Println("server db" + err.Error())
-			}
+		has, err = db.Table(UsersTable).Where("id=?", ret.UserId).Get(&user)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
+			log.Println("server database error: " + err.Error())
 			return
 		}
+		if !has {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "手机号不存在", "code": 401})
+			log.Println("mobile not exist")
+		}
+
 		c.Set("currentUser", &user)
 		if err := DoLogin(c, user); err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "login failed", "code": 401})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "登录失败", "code": 401})
 			log.Println("login failed")
 			return
 		}
