@@ -11,7 +11,7 @@ logConfig:
   level: debug
 dbConfig:
   driverName: mysql
-  dsn: root:password@tcp(127.0.0.1:3306)/niuNiuWhiteBoard?charset=utf8mb4&parseTime=true&loc=Local
+  dsn: root:Gcx199815.@tcp(127.0.0.1:3306)/niuNiuWhiteBoard?charset=utf8mb4&parseTime=true&loc=Local
   showSql: true
   showExecTime: false
   maxIdle: 10

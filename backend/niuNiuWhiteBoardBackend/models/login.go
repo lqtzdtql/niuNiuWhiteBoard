@@ -52,46 +52,46 @@ func Login(c *gin.Context) {
 
 	var userMobile UserMobilePasswd
 	if err := c.BindJSON(&userMobile); err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "login invalid args", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "登录参数错误", "code": 401})
 		log.Println("login invalid args")
 		return
 	}
 	user := User{Mobile: userMobile.Mobile}
 	has, err := db.Table(UsersTable).Get(&user)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 500})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 500})
 		log.Println("server database err:  " + err.Error())
 		return
 	}
 	if !has {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile not exist", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "手机不存在", "code": 401})
 		log.Println("mobile not exist")
 		return
 	}
 
 	if utils.Sha1En(userMobile.Passwd) != user.Passwd {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "password err", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "密码错误", "code": 401})
 		log.Println("password error")
 		return
 	}
 
 	user.UserState = UserStateOnline
 	if err := DoLogin(c, user); err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "cookie set error", "code": 401})
-		log.Println("cookie set error")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "登录失败", "code": 401})
+		log.Println("token set error")
 		return
 	}
 
 	userRow := UserRow{}
 	_, err = db.Table(UsersTable).Where("uuid=?", user.UUID).Get(&userRow)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Println("server database err:  " + err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "login success",
+		"message":   "登录成功",
 		"user_info": userRow,
 		"code":      200,
 	})
@@ -110,7 +110,7 @@ func Logout(c *gin.Context) {
 	c.SetCookie(REFRESH_TOKEN, "", -1, "/", "", secure, true)
 	currentUser.UserState = UserStateOffline
 	c.JSON(http.StatusOK, gin.H{
-		"message": "logout success",
+		"message": "注销成功",
 		"code":    200,
 	})
 	return
@@ -121,23 +121,22 @@ func SignupByMobile(c *gin.Context) {
 	db := c.MustGet("db").(*xorm.Engine)
 	var userMobile UserMobile
 	if err := c.BindJSON(&userMobile); err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "login invalid args", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "注册参数错误", "code": 401})
 		log.Println("login invalid args")
 		return
 	}
 	user := User{
 		Mobile: userMobile.Mobile,
-		Name:   userMobile.Name,
 	}
 
 	has, err := db.Table(UsersTable).Exist(&user)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Println("server database err:  " + err.Error())
 		return
 	}
 	if has {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "mobile or user_name has existed", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "手机已注册", "code": 401})
 		log.Println("mobile or user_name has existed")
 		return
 	}
@@ -148,7 +147,7 @@ func SignupByMobile(c *gin.Context) {
 	user.UpdatedTime = time.Now()
 
 	if _, err = db.Table(UsersTable).Insert(user); err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "register failed", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "注册失败", "code": 401})
 		log.Println("register failed")
 		return
 	}
@@ -156,13 +155,13 @@ func SignupByMobile(c *gin.Context) {
 	userRow := UserRow{}
 	_, err = db.Table(UsersTable).Where("uuid=?", user.UUID).Get(&userRow)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err: " + err.Error(), "code": 501})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Println("server database err:" + err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "register success",
+		"message":   "注册成功",
 		"user_info": userRow,
 		"code":      200,
 	})
@@ -179,12 +178,12 @@ func Info(c *gin.Context) {
 	user.UUID = uuid
 	has, err := db.Table(UsersTable).Where("uuid=?", user.UUID).Get(&userRow)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "server database err:  " + err.Error(), "code": 501})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Println("server database err:  " + err.Error())
 		return
 	}
 	if !has {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "user not exist", "code": 401})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "用户不存在", "code": 401})
 		log.Println("user not exist")
 		return
 	}
