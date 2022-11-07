@@ -25,7 +25,6 @@ export class Arrow extends FabricObject {
   _render(ctx: CanvasRenderingContext2D) {
     let x = -this.width / 2,
       w = this.width;
-    console.log(this.direction);
     ctx.beginPath();
     if (this.group) ctx.translate(-this.group.width / 2 + this.width / 2, -this.group.height / 2 + this.height / 2);
     if (this.direction >= 0) {

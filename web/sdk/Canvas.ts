@@ -50,7 +50,7 @@ export class Canvas extends EventCenter {
   public hoverCursor: string = 'move';
   public moveCursor: string = 'move';
   public rotationCursor: string = 'crosshair';
-  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头 */
+  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮 */
   public brush: {} = { type: 0 };
   public start: Pos = {};
   public end: Pos = {};
@@ -70,6 +70,7 @@ export class Canvas extends EventCenter {
   private _groupSelector: GroupSelector;
   /** 当前选中的组 */
   public _activeGroup: Group;
+  public canvasId: string = '';
 
   /** 画布中所有添加的物体 */
   private _objects: FabricObject[];
@@ -278,6 +279,18 @@ export class Canvas extends EventCenter {
       //     this._currentTransform.left = this._currentTransform.target.left;
       //     this._currentTransform.top = this._currentTransform.target.top;
       // }
+    } else if (this.brush.type === 8) {
+      let target = this.findTarget(e);
+      console.log(target);
+      if (target) {
+        this.delete(target.objectId);
+      } else {
+        if (this._activeObject) {
+          // 如果当前有激活物体
+          this._activeObject.setActive(false);
+          this.renderAll();
+        }
+      }
     } else {
       this.clearContext(this.contextTop);
       this.deactivateAllWithDispatch();
@@ -403,7 +416,7 @@ export class Canvas extends EventCenter {
 
       this.emit('mouse:move', { target, e });
       target && target.emit('mousemove', { e });
-    } else {
+    } else if (this.brush.type !== 8) {
       this.temp = this.getPointer(e, this.upperCanvasEl);
       this.renderTop();
     }
@@ -489,7 +502,7 @@ export class Canvas extends EventCenter {
 
       this.emit('mouse:up', { target, e });
       target && target.emit('mouseup', { e });
-    } else {
+    } else if (this.brush.type !== 8) {
       const _drawFunctionList = [
         null,
         '_drawLine',
@@ -1390,10 +1403,27 @@ export class Canvas extends EventCenter {
     this.renderAll();
     return this;
   }
+  delete(objectId): Canvas {
+    console.log(objectId);
+    for (let i = 0; i < this._objects.length; i++) {
+      if (this._objects[i].objectId === objectId) {
+        if (this._objects[i].active) {
+          this._objects.splice(i, 1);
+        } else {
+          this.setActiveObject(this._objects[i]);
+        }
+        break;
+      }
+    }
+    console.log('2222222223');
+    this.renderAll();
+    return this;
+  }
   _initObject(obj: FabricObject) {
     obj.setupState();
     obj.setCoords();
     obj.canvas = this;
+    obj.objectId = new Date().valueOf();
     this.emit('object:added', { target: obj });
     obj.emit('added');
   }

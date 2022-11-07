@@ -165,6 +165,13 @@ function App() {
       >
         箭头
       </div>
+      <div
+        onClick={() => {
+          modifyBrush(8);
+        }}
+      >
+        橡皮
+      </div>
     </div>
   );
 }

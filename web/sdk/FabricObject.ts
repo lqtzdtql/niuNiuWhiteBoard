@@ -92,6 +92,7 @@ export class FabricObject extends EventCenter {
     'borderWidth transformMatrix visible'
   ).split(' ');
   public timestamp: number = 0;
+  public objectId: string = '';
 
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheContext: CanvasRenderingContext2D;
