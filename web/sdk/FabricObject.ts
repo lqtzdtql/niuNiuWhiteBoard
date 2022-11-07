@@ -91,6 +91,7 @@ export class FabricObject extends EventCenter {
     'stroke strokeWidth ' +
     'borderWidth transformMatrix visible'
   ).split(' ');
+  public timestamp: number = 0;
 
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheContext: CanvasRenderingContext2D;
@@ -149,7 +150,7 @@ export class FabricObject extends EventCenter {
     }
 
     // 画自身坐标系
-    this.drawAxis(ctx);
+    // this.drawAxis(ctx);
 
     ctx.restore();
   }
