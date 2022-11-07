@@ -4,10 +4,8 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io"
 	"math/rand"
-	"niuNiuWhiteBoardBackend/models"
 	"time"
 )
 
@@ -55,14 +53,6 @@ func InArrayString(v string, m *[]string) bool {
 		if value == v {
 			return true
 		}
-	}
-	return false
-}
-
-// 判断是否https
-func IsHttps(c *gin.Context) bool {
-	if c.GetHeader(models.HEADER_FORWARDED_PROTO) == "https" || c.Request.TLS != nil {
-		return true
 	}
 	return false
 }

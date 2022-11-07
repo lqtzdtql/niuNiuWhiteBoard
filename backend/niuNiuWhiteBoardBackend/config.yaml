@@ -1,0 +1,25 @@
+host: localhost:8282
+routes:
+  - /ping
+  - /login
+  - /login/mobile
+  - /signup/mobile
+  - /signup/mobile/exist
+openJwt: true
+logConfig:
+  path: ./run/niuNiuWhiteBoard
+  level: debug
+dbConfig:
+  driverName: mysql
+  dsn: root:password@tcp(127.0.0.1:3306)/niuNiuWhiteBoard?charset=utf8mb4&parseTime=true&loc=Local
+  showSql: true
+  showExecTime: false
+  maxIdle: 10
+  maxOpen: 200
+qiniu_service:
+  access_key:
+  secret_key:
+  rtc_app_id:
+
+
+
