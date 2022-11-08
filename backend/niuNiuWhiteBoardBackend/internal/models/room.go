@@ -21,7 +21,7 @@ type Room struct {
 	HostUUID     string        `json:"host_uuid" xorm:"'host_uuid' not null default '' VARCHAR(128)"`
 	CreatedTime  time.Time     `json:"created_time" xorm:"'created_time'"`
 	UpdatedTime  time.Time     `json:"updated_time" xorm:"'updated_time' updated"`
-	DeletedTime  *time.Time    `json:"deleted_time" xorm:"'deleted_time' deleted"`
+	DeletedTime  time.Time     `json:"deleted_time" xorm:"'deleted_time' datetime deleted"`
 	Type         string        `json:"type"  xorm:"'type' not null default ''"`
 	MySelf       Participant   `json:"myself" xorm:"-"`
 	Participants []Participant `json:"participants" xorm:"-"`
