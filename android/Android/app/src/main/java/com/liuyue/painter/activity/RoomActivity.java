@@ -5,6 +5,9 @@ import android.view.View;
 import com.liuyue.painter.R;
 
 public class RoomActivity extends BaseActivity {
+
+    private String mRoomUUID;
+
     @Override
     protected int getLayoutId() {
         return R.layout.activity_room;
@@ -22,7 +25,7 @@ public class RoomActivity extends BaseActivity {
 
     @Override
     protected void initData() {
-
+        mRoomUUID = getIntent().getStringExtra("roomUUID");
     }
 
     @Override

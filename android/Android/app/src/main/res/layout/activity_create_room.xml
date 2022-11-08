@@ -1,6 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-</LinearLayout>
+    <include layout="@layout/layout_actionbar" />
+
+    <ImageView
+        android:id="@+id/iv_room_cover"
+        android:layout_width="120dp"
+        android:layout_height="140dp"
+        android:layout_below="@+id/rl_action_bar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/img_room_cover" />
+
+    <TextView
+        android:id="@+id/room_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/iv_room_cover"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="30dp"
+        android:text="房间名称："
+        android:textColor="@color/black"
+        android:textSize="18dp" />
+
+    <EditText
+        android:id="@+id/et_room_name"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/room_name"
+        android:layout_toRightOf="@+id/room_name"
+        android:textColor="@color/black" />
+
+    <RadioGroup
+        android:id="@+id/rg_password_choose"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:layout_below="@+id/room_name"
+        android:layout_alignStart="@+id/room_name"
+        android:layout_marginTop="20dp"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rb_need_password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="需要密码"
+            android:checked="true"
+            android:textColor="@color/black" />
+
+        <RadioButton
+            android:id="@+id/rb_no_need_password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="无需密码"
+            android:textColor="@color/black" />
+
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/room_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/rg_password_choose"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="10dp"
+        android:text="房间密码："
+        android:textColor="@color/black"
+        android:textSize="18dp" />
+
+    <EditText
+        android:id="@+id/et_room_password"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/room_password"
+        android:layout_toRightOf="@+id/room_password"
+        android:textColor="@color/black" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/bt_create_room"
+        android:layout_width="260dp"
+        android:layout_height="54dp"
+        android:layout_centerHorizontal="true"
+        android:text="创建房间"
+        android:textColor="@color/white"
+        android:textSize="21sp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="50dp"
+        app:backgroundTint="@color/primary"/>
+
+</RelativeLayout>

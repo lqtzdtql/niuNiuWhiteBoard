@@ -22,7 +22,7 @@ public class UserAgreementActivity extends BaseActivity {
     @Override
     protected void initView() {
         initStatusBar();
-        mBackBtn = findViewById(R.id.back_btn);
+        mBackBtn = findViewById(R.id.bt_back);
         mTvBarTitle = findViewById(R.id.tv_bar_title);
         mTvBarTitle.setText("用户协议");
         mAgreementWebView = findViewById(R.id.agreement_webview);
@@ -48,7 +48,7 @@ public class UserAgreementActivity extends BaseActivity {
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.back_btn:
+            case R.id.bt_back:
                 finish();
                 break;
             default:

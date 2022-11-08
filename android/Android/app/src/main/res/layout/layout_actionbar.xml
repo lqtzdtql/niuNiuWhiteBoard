@@ -3,10 +3,11 @@
     android:layout_width="match_parent"
     android:layout_height="56dp"
     android:background="@color/blue"
+    android:id="@+id/rl_action_bar"
     android:gravity="center_vertical">
 
     <ImageView
-        android:id="@+id/back_btn"
+        android:id="@+id/bt_back"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"

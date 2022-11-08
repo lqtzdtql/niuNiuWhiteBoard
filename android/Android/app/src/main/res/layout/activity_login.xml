@@ -81,8 +81,7 @@
             android:id="@+id/et_login_password"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="6"
+            android:inputType="textPassword"
             android:singleLine="true"
             android:textSize="17sp" />
 

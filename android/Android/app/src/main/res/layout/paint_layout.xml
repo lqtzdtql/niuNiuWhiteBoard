@@ -16,7 +16,7 @@
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
             android:layout_marginLeft="10dp"
-            android:src="@drawable/ic_back_dark" />
+            android:src="@mipmap/mz_titlebar_ic_back_dark" />
 
         <ImageView
             android:id="@+id/id_save_btn"
@@ -25,7 +25,7 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="5dp"
-            android:background="@drawable/ic_more_dark"></ImageView>
+            android:background="@mipmap/mz_titlebar_ic_more_dark"></ImageView>
 
         <ImageView
             android:id="@+id/id_redo_btn"
@@ -34,7 +34,7 @@
             android:layout_centerVertical="true"
             android:layout_marginRight="30dp"
             android:layout_toLeftOf="@id/id_save_btn"
-            android:background="@drawable/ic_redo" />
+            android:background="@mipmap/ic_redo" />
 
         <ImageView
             android:id="@+id/id_undo_btn"
@@ -43,7 +43,7 @@
             android:layout_centerVertical="true"
             android:layout_marginRight="30dp"
             android:layout_toLeftOf="@id/id_redo_btn"
-            android:background="@drawable/ic_undo" />
+            android:background="@mipmap/ic_undo" />
     </RelativeLayout>
 
     <!--body-->
@@ -51,12 +51,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.liuyue.painter.view.MyCanvas
+        <com.seewo.palette.ui.MyCanvas
             android:id="@+id/id_paint_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        </com.liuyue.painter.view.MyCanvas>
+        </com.seewo.palette.ui.MyCanvas>
 
         <LinearLayout
             android:id="@+id/id_choose_layout"
@@ -91,7 +91,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/btn_selector"
                     android:scaleType="fitXY"
-                    android:src="@drawable/ic_menu_watercolor" />
+                    android:src="@mipmap/ic_menu_watercolor" />
             </LinearLayout>
 
             <LinearLayout
@@ -104,7 +104,7 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="center_vertical"
-                    android:background="@drawable/fastscroller_letter" />
+                    android:background="@mipmap/mz_fastscroller_letter" />
             </LinearLayout>
 
             <LinearLayout
@@ -119,7 +119,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/btn_selector"
                     android:scaleType="fitXY"
-                    android:src="@drawable/icon_add" />
+                    android:src="@mipmap/icon_add" />
             </LinearLayout>
 
             <LinearLayout
@@ -134,7 +134,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/btn_selector"
                     android:scaleType="fitXY"
-                    android:src="@drawable/ic_cut" />
+                    android:src="@mipmap/ic_cut" />
             </LinearLayout>
 
             <LinearLayout
@@ -149,7 +149,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/btn_selector"
                     android:scaleType="fitXY"
-                    android:src="@drawable/ic_menu_hard_eraser" />
+                    android:src="@mipmap/ic_menu_hard_eraser" />
             </LinearLayout>
 
             <LinearLayout
@@ -164,7 +164,7 @@
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/btn_selector"
                     android:scaleType="fitXY"
-                    android:src="@drawable/shapeicon" />
+                    android:src="@mipmap/shapeicon" />
             </LinearLayout>
 
         </LinearLayout>
