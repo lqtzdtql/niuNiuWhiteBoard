@@ -1,17 +1,17 @@
 package models
 
 import (
-	"log"
 	"net/http"
 	"time"
+
+	"niuNiuWhiteBoardBackend/common/log"
+	conf "niuNiuWhiteBoardBackend/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-xorm/xorm"
 	"github.com/oklog/ulid/v2"
 	"github.com/qiniu/go-sdk/v7/auth"
 	"github.com/qiniu/go-sdk/v7/rtc"
-
-	conf "niuNiuWhiteBoardBackend/config"
 )
 
 func CreateRoom(c *gin.Context) {
@@ -26,21 +26,21 @@ func CreateRoom(c *gin.Context) {
 
 	room := Room{
 		Name:        nameAndType.Name,
-		HostID:      currentUser.ID,
+		HostUUID:    currentUser.UUID,
 		UUID:        ulid.Make().String(),
 		CreatedTime: time.Now(),
 		UpdatedTime: time.Now(),
 		Type:        nameAndType.Type,
 	}
-	if has, _ := db.Table(RoomTable).Where("host_id = ? ", room.HostID).Exist(new(Room)); has {
+	if has, _ := db.Table(RoomTable).Where("host_uuid = ? ", room.HostUUID).Exist(new(Room)); has {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "房主已在房内，无法创建房间", "code": 401})
-		log.Println("host in the room, can not build room")
+		log.Logger.Warn("host in the room, can not build room", log.Any("host in the room, can not build room", room.HostUUID))
 		return
 	}
 
 	if _, err := db.Table(RoomTable).Insert(room); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "创建房间失败", "code": 501})
-		log.Println("build room failed")
+		log.Logger.Error("build room failed", log.Any("build room failed", err.Error()))
 		return
 	}
 
@@ -55,7 +55,7 @@ func CreateRoom(c *gin.Context) {
 
 	if _, err := db.Table(ParticipantTable).Insert(&participant); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "创建房间失败", "code": 501})
-		log.Println("participant enter failed")
+		log.Logger.Error("participant enter failed", log.Any("participant enter failed", err.Error()))
 		return
 	}
 
@@ -63,7 +63,7 @@ func CreateRoom(c *gin.Context) {
 	if _, err := db.Table(ParticipantTable).Where("user_uuid = ? ", participant.UserUUID).Get(&participant); err != nil {
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "创建房间失败", "code": 501})
-			log.Println("get participant info failed")
+			log.Logger.Error("get participant info failed", log.Any("get participant info failed", err.Error()))
 		}
 		return
 	}
@@ -72,7 +72,7 @@ func CreateRoom(c *gin.Context) {
 	//获取room信息（包含id）
 	if _, err := db.Table(RoomTable).Where("uuid = ? ", room.UUID).Get(&roomRaw); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "创建房间失败", "code": 501})
-		log.Println("get room info failed" + err.Error())
+		log.Logger.Error("get room info failed", log.Any("get room info failed", err.Error()))
 		return
 	}
 
@@ -83,7 +83,7 @@ func CreateRoom(c *gin.Context) {
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "创建房间失败", "code": 501})
-		log.Println("enter room failed")
+		log.Logger.Error("enter room failed", log.Any("enter room failed", err.Error()))
 	}
 
 	c.JSON(200, roomRaw)
@@ -96,12 +96,12 @@ func GetRoomInfo(c *gin.Context) {
 	has, err := db.Table(RoomTable).Where("uuid=?", uuid).Get(&roomRaw)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-		log.Println("server db" + err.Error())
+		log.Logger.Error("server database error", log.Any("server database error", err.Error()))
 		return
 	}
 	if !has {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "房间不存在", "code": 401})
-		log.Println("room not exist")
+		log.Logger.Warn("room not exist", log.Any("room not exist", uuid))
 		return
 	}
 	//获取参与者列表
@@ -112,7 +112,7 @@ func GetRoomInfo(c *gin.Context) {
 	})
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "获取房间信息失败", "code": 401})
-		log.Println("enter room failed")
+		log.Logger.Error("enter room failed", log.Any("enter room failed", err.Error()))
 		return
 	}
 
@@ -121,17 +121,16 @@ func GetRoomInfo(c *gin.Context) {
 
 // GetRoomRTC get room info
 func GetRoomRTC(c *gin.Context) {
-	cfg := c.MustGet("config").(*conf.Config)
 	room := c.MustGet("room").(*Room)
 	currentUser := c.MustGet("currentUser").(*User)
 
 	mg := rtc.NewManager(&auth.Credentials{
-		AccessKey: cfg.QiniuService.AccessKey,
-		SecretKey: []byte(cfg.QiniuService.SecretKey),
+		AccessKey: conf.Cfg.QiniuService.AccessKey,
+		SecretKey: []byte(conf.Cfg.QiniuService.SecretKey),
 	})
 
 	access := rtc.RoomAccess{
-		AppID:      cfg.QiniuService.RTCAppID,
+		AppID:      conf.Cfg.QiniuService.RTCAppID,
 		RoomName:   room.UUID,
 		UserID:     currentUser.UUID,
 		ExpireAt:   time.Now().Unix() + 600,
@@ -162,7 +161,7 @@ func ListRoom(c *gin.Context) {
 	})
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-		log.Println("get roomlist failed")
+		log.Logger.Error("get roomlist failed", log.Any("get roomlist failed", err.Error()))
 		return
 	}
 
@@ -205,7 +204,7 @@ func EnterRoom(c *gin.Context) {
 		//如果没在房中，加入房间
 		if _, err := db.Table(ParticipantTable).Insert(&participant); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-			log.Println("enter room failed")
+			log.Logger.Error("enter room failed", log.Any("enter room failed", err.Error()))
 			return
 		}
 	}
@@ -218,7 +217,7 @@ func EnterRoom(c *gin.Context) {
 	})
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-		log.Println("enter room failed")
+		log.Logger.Error("enter room failed", log.Any("enter room failed", err.Error()))
 		return
 	}
 
@@ -241,12 +240,12 @@ func ExitRoom(c *gin.Context) {
 	has, err := db.Table(RoomTable).Where("uuid=?", uuid).Get(&room)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-		log.Println("server database err" + err.Error())
+		log.Logger.Error("server database error", log.Any("server database error", err.Error()))
 		return
 	}
 	if !has {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "房间不存在", "code": 401})
-		log.Println("room not exist")
+		log.Logger.Warn("room not exist", log.Any("room not exist", uuid))
 		return
 	}
 	participant := new(Participant)
@@ -256,19 +255,19 @@ func ExitRoom(c *gin.Context) {
 	has, err = db.Table(ParticipantTable).Where("user_uuid = ? AND room_uuid = ?", currentUser.UUID, room.UUID).Get(participant)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-		log.Println("exit room failed")
+		log.Logger.Error("exit room failed", log.Any("exit room failed", err.Error()))
 		return
 	}
 	if !has {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "用户不在房中", "code": 401})
-		log.Println("not found participant in room")
+		log.Logger.Warn("room not exist", log.Any("room not exist", room.UUID))
 		return
 	} else {
 		//如果在，则删除；
 		_, err := db.Table(ParticipantTable).Where("user_uuid = ? AND room_uuid = ?", currentUser.UUID, room.UUID).Delete(participant)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-			log.Println("exit room failed")
+			log.Logger.Error("exit room failed", log.Any("exit room failed", err.Error()))
 			return
 		}
 	}
@@ -278,7 +277,7 @@ func ExitRoom(c *gin.Context) {
 		//如果人数为0， 则销毁房间
 		if _, err = db.Table(RoomTable).Where("uuid = ?", room.UUID).Delete(&room); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-			log.Println("eixt room success, but room not close: " + err.Error())
+			log.Logger.Error("eixt room success, but room not close", log.Any("eixt room success, but room not close", err.Error()))
 			return
 		}
 	}
