@@ -21,9 +21,13 @@ func RunSocket(c *gin.Context) {
 	if user == "" {
 		return
 	}
+	//TODO：鉴权逻辑
+
 	log.Logger.Info("newUser", zap.String("newUser", user))
 	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": "websocket升级失败", "code": 401})
+		log.Logger.Error("Upgrade failed", log.Any("Upgrade failed", err.Error()))
 		return
 	}
 

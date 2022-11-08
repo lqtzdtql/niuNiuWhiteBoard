@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/gin-gonic/gin v1.8.1
-	github.com/go-playground/locales v0.14.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-xorm/xorm v0.7.9
+	github.com/gomodule/redigo v1.8.9
 	github.com/gorilla/websocket v1.5.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/spf13/viper v1.13.0
@@ -19,6 +19,7 @@ require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
