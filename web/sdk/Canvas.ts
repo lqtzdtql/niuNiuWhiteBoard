@@ -73,6 +73,8 @@ export class Canvas extends EventCenter {
   /** 当前选中的组 */
   public _activeGroup: Group;
   public canvasId: string = '';
+  public modifiedList: [] = [];
+  public modifiedAgainList: [] = [];
 
   /** 画布中所有添加的物体 */
   private _objects: FabricObject[];
@@ -198,6 +200,16 @@ export class Canvas extends EventCenter {
     Util.addListener(window, 'resize', this._onResize);
     Util.addListener(this.upperCanvasEl, 'mousedown', this._onMouseDown);
     Util.addListener(this.upperCanvasEl, 'mousemove', this._onMouseMove);
+    this.on('object:added', () => {
+      while (this.modifiedAgainList.length) {
+        this.modifiedAgainList.pop();
+      }
+    });
+    this.on('object:modified', () => {
+      while (this.modifiedAgainList.length) {
+        this.modifiedAgainList.pop();
+      }
+    });
   }
   _onMouseDown(e: MouseEvent) {
     this.__onMouseDown(e);
@@ -244,6 +256,7 @@ export class Canvas extends EventCenter {
         this.deactivateAllWithDispatch();
         // this.renderAll();
       } else {
+        if (!target.visible) return;
         // 如果是点选操作，接下来就要为各种变换做准备
         target.saveState();
 
@@ -734,6 +747,7 @@ export class Canvas extends EventCenter {
 
     for (let i = 0, len = this._objects.length; i < len; ++i) {
       let currentObject = this._objects[i];
+      if (!currentObject.visible) continue;
 
       if (!currentObject) continue;
 
@@ -814,6 +828,17 @@ export class Canvas extends EventCenter {
         top: start.y,
         stroke: this.brush.stroke,
         strokeWidth: this.strokeWidth || 1,
+      });
+      line.on('added', () => {
+        console.log('直线被添加了');
+        this.modifiedList.push([line.objectId, { ...line.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      line.on('modified', () => {
+        console.log('直线被修改了');
+        console.log(line);
+        this.modifiedList.push([line.objectId, { ...line.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
       });
       this.add(line);
     }
@@ -982,15 +1007,11 @@ export class Canvas extends EventCenter {
     this.add(text);
   }
   _drawPenPath(penPathList, lab) {
-    let sx = 0,
-      sy = 0,
-      maxx = Number.MIN_SAFE_INTEGER,
+    let maxx = Number.MIN_SAFE_INTEGER,
       maxy = Number.MIN_SAFE_INTEGER,
       minx = Number.MAX_SAFE_INTEGER,
       miny = Number.MAX_SAFE_INTEGER;
     for (const i of penPathList) {
-      sx += i.x;
-      sy += i.y;
       maxx = Math.max(maxx, i.x);
       maxy = Math.max(maxy, i.y);
       minx = Math.min(minx, i.x);
@@ -1016,6 +1037,56 @@ export class Canvas extends EventCenter {
       });
       this.add(penPath);
       this.penPath = [];
+    }
+  }
+
+  revoke() {
+    this.modifyBrush({ type: 0 });
+    if (this.modifiedList.length) {
+      const temp = this.modifiedList.pop();
+      for (const i of this._objects) {
+        if (i.objectId === temp[0]) {
+          if (temp[2] === 'modified') {
+            i.saveState();
+            this.modifiedAgainList.push([temp[0], { ...i.originalState }, temp[2]]);
+            for (const k in temp[1]) {
+              i[k] = temp[1][k];
+            }
+          } else {
+            this.modifiedAgainList.push(temp);
+            i.visible = false;
+          }
+
+          i.emit('object:modified', { target: i });
+          break;
+        }
+      }
+      this.renderAll();
+    }
+  }
+
+  redo() {
+    console.log(this.modifiedAgainList);
+    this.modifyBrush({ type: 0 });
+    if (this.modifiedAgainList.length) {
+      const temp = this.modifiedAgainList.pop();
+      for (const i of this._objects) {
+        if (i.objectId === temp[0]) {
+          if (temp[2] === 'modified') {
+            i.saveState();
+            this.modifiedList.push([temp[0], { ...i.originalState }, temp[2]]);
+            for (const k in temp[1]) {
+              i[k] = temp[1][k];
+            }
+          } else {
+            this.modifiedList.push(temp);
+            i.visible = true;
+          }
+          i.emit('object:modified', { target: i });
+          break;
+        }
+      }
+      this.renderAll();
     }
   }
 

@@ -22,6 +22,14 @@ function App() {
   const modifyBrush = (type) => {
     canvas.current.modifyBrush({ type, stroke: 'green', fill: 'red', text: '哈哈哈' });
   };
+  const revoke = () => {
+    canvas.current.revoke();
+    console.log('撤销');
+  };
+  const redo = () => {
+    canvas.current.redo();
+    console.log('重做');
+  };
 
   return (
     <div className="app">
@@ -96,6 +104,8 @@ function App() {
       >
         自由线条
       </div>
+      <div onClick={revoke}>撤销</div>
+      <div onClick={redo}>重做</div>
     </div>
   );
 }
