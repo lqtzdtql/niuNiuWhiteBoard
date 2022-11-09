@@ -41,11 +41,6 @@ type Mobile struct {
 	Mobile string `form:"mobile" json:"mobile" binding:"required"`
 }
 
-type CustomClaims struct {
-	UserId int64
-	jwt.StandardClaims
-}
-
 // 手机 + 密码登录
 func Login(c *gin.Context) {
 	db := c.MustGet("db").(*xorm.Engine)

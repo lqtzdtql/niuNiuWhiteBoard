@@ -48,8 +48,8 @@ func (s *Server) heartbeat() {
 
 		for _, c := range clients {
 			if time.Now().Unix()-c.HeartbeatTime > HeartbeatTime {
-				log.Logger.Info("loginout", log.Any("loginout", c.Name))
-				delete(s.Clients, c.Name)
+				log.Logger.Info("loginout", log.Any("loginout", c.UUID))
+				delete(s.Clients, c.UUID)
 				close(c.Send)
 			}
 		}
@@ -58,50 +58,31 @@ func (s *Server) heartbeat() {
 }
 
 func (s *Server) register() {
-	log.Logger.Info("start server", log.Any("start server", "start server..."))
+	log.Logger.Info("start register", log.Any("start server", "start server..."))
 	for {
 		select {
 		case conn := <-s.Register:
 			//时机：进房后开始
-			log.Logger.Info("login", log.Any("login", "new user login in"+conn.Name))
-			s.Clients[conn.Name] = conn
+			log.Logger.Info("login", log.Any("login", "new user login in"+conn.UUID))
+			s.Clients[conn.UUID] = conn
 			msg := &models.Message{
-				From: "niuNiuWhiteBoard",
-				To:   conn.Name,
-				//TODO: 此处查找出数据库，将所有保存的绘制信息找出，并且conn.Send <- 绘图信息
+				From:   "niuNiuWhiteBoard",
+				ToRoom: conn.UUID,
+				//TODO: 此处查找出指定房间的数据库，将所有保存的绘制信息找出，并且conn.Send <- 绘图信息
 				Content: "welcome!",
 			}
 			message, _ := json.Marshal(msg)
 			conn.Send <- message
 		case conn := <-s.UnRegister:
-			//时机：退房后。
-			log.Logger.Info("loginout", log.Any("loginout", conn.Name))
-			if _, ok := s.Clients[conn.Name]; ok {
+			log.Logger.Info("loginout", log.Any("loginout", conn.UUID))
+			if _, ok := s.Clients[conn.UUID]; ok {
 				close(conn.Send)
-				delete(s.Clients, conn.Name)
+				delete(s.Clients, conn.UUID)
 			}
 		case message := <-s.Broadcast:
 			msg := &models.Message{}
 			json.Unmarshal(message, msg)
-			//
-			if msg.To != "" {
-				if msg.ContentType == models.OBJECT {
-					// 图形相关的信息需要被保存，保存的图形只会在存在socket的一个端上进行保存，防止分布式部署后，信息重复问题
-					_, exits := s.Clients[msg.From]
-					if exits {
-						saveMessage(msg)
-					}
-					sendRoomMessage(msg, s)
-				} else if msg.ContentType == models.REPAINT {
-					//TODO: 此处查找出数据库，将所有保存的绘制信息找出，并且conn.Send <- 绘图信息
-				} else {
-					//转发到房间号为to的所有房间
-					client, ok := s.Clients[msg.To]
-					if ok {
-						client.Send <- message
-					}
-				}
-			}
+			service.MessageHandle(msg, s)
 		}
 	}
 }
@@ -127,37 +108,4 @@ func (s *Server) Start() {
 		}()
 		s.register()
 	}()
-}
-
-// 发送给房间的消息,需要查询该房间所有参与者再依次发送
-func sendRoomMessage(msg *models.Message, s *Server) {
-	// 发送给群组的消息，查找该群所有的用户进行发送
-	users := service.RoomService.GetUserIdByRoomUuid(msg.To)
-	for _, user := range users {
-		if user.Uuid == msg.From {
-			continue
-		}
-
-		client, ok := s.Clients[user.Uuid]
-		if !ok {
-			continue
-		}
-		// from是个人，to是群聊uuid。所以在返回消息时，将from修改为群聊uuid
-		msgSend := models.Message{
-			From:        msg.To,
-			To:          msg.From,
-			Content:     msg.Content,
-			ContentType: msg.ContentType,
-		}
-
-		message, err := json.Marshal(&msgSend)
-		if err == nil {
-			client.Send <- message
-		}
-	}
-}
-
-// 保存消息
-func saveMessage(message *models.Message) {
-	service.MessageService.SaveMessage(*message)
 }
