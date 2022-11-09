@@ -43,6 +43,7 @@ func main() {
 		v1.GET("/rooms/:uuid", models.GetRoomInfo)
 		v1.GET("/rooms/:uuid/exit", models.ExitRoom)
 		v1.GET("/rooms/:uuid/rtc", models.EnterRoom, models.GetRoomRTC)
+		v1.GET("/rooms/:uuid/whiteboard", models.EnterRoom, models.GetRoomWhiteBoard)
 		v1.GET("/logout", models.Logout)
 	}
 
@@ -57,7 +58,7 @@ func Cors() gin.HandlerFunc {
 			c.Header("Access-Control-Allow-Origin", "*")
 			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
 			c.Header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
-			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type, Access-Token")
+			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type, Access-Token, Refresh-Token")
 			c.Header("Access-Control-Allow-Credentials", "true")
 		}
 		//允许类型校验

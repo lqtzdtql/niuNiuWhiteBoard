@@ -12,7 +12,7 @@ type Config struct {
 	LogConfig    *LogConfig    `json:"logConfig"`
 	DbConfig     *DbConfig     `json:"dbConfig"`
 	QiniuService *QiniuService `json:"qiniu_service"`
-	//Whiteboard   *Whiteboard        `json:"whiteboard"`
+	Whiteboard   *Whiteboard   `json:"whiteboard"`
 }
 
 type DbConfig struct {
@@ -37,8 +37,7 @@ type QiniuService struct {
 }
 
 type Whiteboard struct {
-	AppID string `json:"app_id"`
-	Token string `json:"token"`
+	AK string `json:"ak"`
 }
 
 var Cfg Config

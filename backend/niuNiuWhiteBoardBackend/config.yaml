@@ -1,10 +1,14 @@
 host: localhost:8282
 routes:
-  - /ping
+  - /signup
   - /login
+  - /v1/userinfo/:uuid
+  - /v1/roomlist
   - /login/mobile
   - /signup/mobile
   - /signup/mobile/exist
+  - /v1/rooms/:uuid/whiteboard
+  - /v1/logout
 openJwt: true
 logConfig:
   path: ./run/niuNiuWhiteBoard
@@ -20,6 +24,8 @@ qiniu_service:
   access_key:
   secret_key:
   rtc_app_id:
+whiteboard:
+  ak: 123
 
 
 

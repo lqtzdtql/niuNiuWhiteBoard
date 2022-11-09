@@ -119,7 +119,6 @@ func GetRoomInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, roomRaw)
 }
 
-// GetRoomRTC get room info
 func GetRoomRTC(c *gin.Context) {
 	room := c.MustGet("room").(*Room)
 	currentUser := c.MustGet("currentUser").(*User)
@@ -140,6 +139,28 @@ func GetRoomRTC(c *gin.Context) {
 	token, err := mg.GetRoomToken(access)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "get room token failed", "code": 401})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user_uuid": currentUser.UUID,
+		"token":     token,
+	})
+}
+
+func GetRoomWhiteBoard(c *gin.Context) {
+	room := c.MustGet("room").(*Room)
+	currentUser := c.MustGet("currentUser").(*User)
+	access := ClientClaims{
+		SK:         conf.Cfg.Whiteboard.AK,
+		RoomName:   room.UUID,
+		UserName:   currentUser.UUID,
+		Permission: room.MySelf.Permission,
+	}
+
+	token, err := access.MakeWhiteBoardToken()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "get room token failed", "code": 501})
 		return
 	}
 
@@ -227,7 +248,7 @@ func EnterRoom(c *gin.Context) {
 		}
 	}
 
-	c.Set("room", room)
+	c.Set("room", &room)
 	c.Next()
 }
 
