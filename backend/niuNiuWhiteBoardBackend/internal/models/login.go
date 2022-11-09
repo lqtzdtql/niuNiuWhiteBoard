@@ -192,16 +192,6 @@ func Info(c *gin.Context) {
 
 func DoLogin(c *gin.Context, user User) error {
 	if conf.Cfg.OpenJwt { //返回jwt
-		customClaims := &CustomClaims{
-			UserId: user.ID,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Duration(MAXAGE) * time.Second).Unix(), // 过期时间，必须设置
-			},
-		}
-		accessToken, err := customClaims.MakeToken()
-		if err != nil {
-			return err
-		}
 		refreshClaims := &CustomClaims{
 			UserId: user.ID,
 			StandardClaims: jwt.StandardClaims{
@@ -212,7 +202,6 @@ func DoLogin(c *gin.Context, user User) error {
 		if err != nil {
 			return err
 		}
-		c.Header(ACCESS_TOKEN, accessToken)
 		c.Header(REFRESH_TOKEN, refreshToken)
 	}
 	return nil
