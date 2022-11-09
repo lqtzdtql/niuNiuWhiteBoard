@@ -256,7 +256,7 @@ export class Canvas extends EventCenter {
         this.deactivateAllWithDispatch();
         // this.renderAll();
       } else {
-        if (!target.visible) return;
+        if (!target.visible || target.isLocked) return;
         // 如果是点选操作，接下来就要为各种变换做准备
         target.saveState();
 
@@ -288,7 +288,7 @@ export class Canvas extends EventCenter {
       this.emit('mouse:down', { target, e });
       target && target.emit('mousedown', { e });
       // if (corner === 'mtr') {
-      //     // 如果点击的是上方的控制点，也就是旋转操作，我们需要临时改一下变换中心，因为我们一直就是以 center 为中心，所以可以先不管
+      // 如果点击的是上方的控制点，也就是旋转操作，我们需要临时改一下变换中心，因为我们一直就是以 center 为中心，所以可以先不管
       //     this._previousOriginX = this._currentTransform.target.originX;
       //     this._currentTransform.target.adjustPosition('center');
       //     this._currentTransform.left = this._currentTransform.target.left;
@@ -299,25 +299,16 @@ export class Canvas extends EventCenter {
       if (target) {
         this.delete(target.objectId);
       } else {
-        if (this._activeObject) {
-          // 如果当前有激活物体
-          this._activeObject.setActive(false);
-          this.renderAll();
-        }
+        this.discardActiveObject();
+        this.renderAll();
       }
     } else if (this.brush.type === 10) {
-      if (this._activeObject) {
-        // 如果当前有激活物体
-        this._activeObject.setActive(false);
-        this.renderAll();
-      }
+      this.discardActiveObject();
+      this.renderAll();
       this.penPath.push(this.getPointer(e, this.upperCanvasEl));
     } else {
-      if (this._activeObject) {
-        // 如果当前有激活物体
-        this._activeObject.setActive(false);
-        this.renderAll();
-      }
+      this.discardActiveObject();
+      this.renderAll();
       this.start = this.getPointer(e, this.upperCanvasEl);
     }
   }
@@ -1116,6 +1107,10 @@ export class Canvas extends EventCenter {
       const temp = this.modifiedList.pop();
       for (const i of this._objects) {
         if (i.objectId === temp[0]) {
+          if (i.lock) {
+            this.modifiedList.push(temp);
+            return;
+          }
           if (temp[2] === 'modified') {
             i.saveState();
             this.modifiedAgainList.push([temp[0], { ...i.originalState }, temp[2]]);
@@ -1142,6 +1137,10 @@ export class Canvas extends EventCenter {
       const temp = this.modifiedAgainList.pop();
       for (const i of this._objects) {
         if (i.objectId === temp[0]) {
+          if (i.lock) {
+            this.modifiedAgainList.push(temp);
+            return;
+          }
           if (temp[2] === 'modified') {
             i.saveState();
             this.modifiedList.push([temp[0], { ...i.originalState }, temp[2]]);
@@ -1184,10 +1183,12 @@ export class Canvas extends EventCenter {
     );
   }
   setActiveObject(object: FabricObject, e: MouseEvent): Canvas {
+    if (object.isLocked) return;
     if (this._activeObject) {
       // 如果当前有激活物体
-      this._activeObject.setActive(false);
+      this.discardActiveObject();
     }
+    object.emit('lock');
     this._activeObject = object;
     object.setActive(true);
 
@@ -1320,6 +1321,7 @@ export class Canvas extends EventCenter {
   discardActiveObject() {
     if (this._activeObject) {
       this._activeObject.setActive(false);
+      this._activeObject.emit('unlock');
     }
     this._activeObject = null;
     return this;

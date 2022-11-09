@@ -93,6 +93,7 @@ export class FabricObject extends EventCenter {
   ).split(' ');
   public timestamp: number = 0;
   public objectId: string = '';
+  public isLocked: boolean = false;
 
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheContext: CanvasRenderingContext2D;
@@ -102,6 +103,8 @@ export class FabricObject extends EventCenter {
   constructor(options) {
     super();
     this.initialize(options);
+    this.on('lock', () => {});
+    this.on('unlock', () => {});
   }
   initialize(options) {
     options && this.setOptions(options);
@@ -150,6 +153,10 @@ export class FabricObject extends EventCenter {
       this.drawControls(ctx);
     }
 
+    if (this.isLocked) {
+      this.drawBorders(ctx);
+    }
+
     // 画自身坐标系
     // this.drawAxis(ctx);
 
@@ -182,6 +189,10 @@ export class FabricObject extends EventCenter {
     // const sin = Math.sin(radian);
     // const m = [cos * this.scaleX, sin * this.scaleX, -sin * this.scaleY, cos * this.scaleY, center.x, center.y];
   }
+
+  updateLock(isLocked) {
+    this.isLocked = isLocked;
+  }
   /** 绘制激活物体边框 */
   drawBorders(ctx: CanvasRenderingContext2D): FabricObject {
     let padding = this.padding,
@@ -208,7 +219,7 @@ export class FabricObject extends EventCenter {
     );
 
     // 画旋转控制点的那条线
-    if (this.hasRotatingPoint && this.hasControls) {
+    if (this.hasRotatingPoint && this.hasControls && !this.isLocked) {
       let rotateHeight = (-h - strokeWidth - padding * 2) / 2;
 
       ctx.beginPath();
