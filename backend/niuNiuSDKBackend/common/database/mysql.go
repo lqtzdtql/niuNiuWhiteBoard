@@ -20,9 +20,10 @@ var Db = map[string]conf.DbConfig{
 	},
 }
 
-func InitDatabase() (*xorm.Engine, error) {
+func init() {
 	if MEngine == nil {
-		MEngine, err := xorm.NewEngine(Db["db1"].DriverName, Db["db1"].Dsn)
+		var err error
+		MEngine, err = xorm.NewEngine(Db["db1"].DriverName, Db["db1"].Dsn)
 		if err != nil {
 			log.Fatalln("Database NewEngine fatal")
 		}
@@ -30,7 +31,7 @@ func InitDatabase() (*xorm.Engine, error) {
 		MEngine.SetMaxOpenConns(Db["db1"].MaxOpen) //最大连接数
 		MEngine.ShowSQL(Db["db1"].ShowSql)
 		MEngine.ShowExecTime(Db["db1"].ShowExecTime)
-		return MEngine, nil
+		return
 	}
-	return MEngine, nil
+	return
 }

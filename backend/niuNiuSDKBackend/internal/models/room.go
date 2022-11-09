@@ -1,7 +1,6 @@
 package models
 
 import (
-	"gorm.io/plugin/soft_delete"
 	"time"
 )
 
@@ -11,12 +10,17 @@ import (
 // 当有人退出时，删除该用户。
 // 如果退出的是房主，则广播踢人消息。房间销毁。
 
+const (
+	RoomTable        = "rooms"
+	ParticipantTable = "participants"
+)
+
 type Room struct {
-	ID        int32                 `json:"id" gorm:"primarykey"`
-	Uuid      string                `json:"uuid" gorm:"type:varchar(150);not null;unique_index:idx_uuid;comment:'uuid'"`
-	Name      string                `json:"name" gorm:"type:varchar(150);comment:'房间名称"`
-	HostID    int32                 `json:"userId" gorm:"index;comment:'主持人标识'"`
-	CreatedAt time.Time             `json:"createAt"`
-	UpdatedAt time.Time             `json:"updatedAt"`
-	DeletedAt soft_delete.DeletedAt `json:"deletedAt"`
+	ID          int64     `json:"id" xorm:"'id' pk autoincr BIGINT(20)"`
+	UUID        string    `json:"uuid" xorm:"'uuid' not null default '' VARCHAR(128)"`
+	Name        string    `json:"name" xorm:"'name' not null default '' VARCHAR(50)"`
+	HostUUID    string    `json:"host_uuid" xorm:"'host_uuid' not null default '' VARCHAR(128)"`
+	CreatedTime time.Time `json:"created_time" xorm:"'created_time'"`
+	UpdatedTime time.Time `json:"updated_time" xorm:"'updated_time' updated"`
+	DeletedTime time.Time `json:"deleted_time" xorm:"'deleted_time' datetime deleted"`
 }

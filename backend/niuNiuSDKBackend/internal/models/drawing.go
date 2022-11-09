@@ -1,6 +1,6 @@
 package models
 
-// redis存储，key为ObjectId，map存储DrawingInfo。
+// redis存储，key为ObjectId，map存储DrawingInfo。--（包含白板id，定时将DrawingInfo转发给拥有该白板的所有用户）
 // 每次更新时。查询对应的ObjectId，比较时间戳判断是否更新。--diff
 // 同时，也使用set，存储whiteboard 和 ObjectId。
 // 每次要获取某个白板全部信息时，先查询mysql通过participant表，获取participant的当前whiteboarduuid
