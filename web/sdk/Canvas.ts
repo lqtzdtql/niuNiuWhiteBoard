@@ -341,7 +341,7 @@ export class Canvas extends EventCenter {
         // 如果是 hover 事件，这里我们只需要改变鼠标样式，并不会重新渲染
         let style = this.upperCanvasEl.style;
         target = this.findTarget(e);
-
+        if (target && !target.visible) return;
         if (target) {
           this._setCursorFromEvent(e, target);
         } else {
@@ -870,6 +870,16 @@ export class Canvas extends EventCenter {
         top: start.y + (end.y - start.y) / 2,
         fill: 'red',
       });
+      rect.on('added', () => {
+        console.log('rect被添加了');
+        this.modifiedList.push([rect.objectId, { ...rect.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      rect.on('modified', () => {
+        console.log('rect被修改了');
+        this.modifiedList.push([rect.objectId, { ...rect.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(rect);
     }
   }
@@ -899,6 +909,16 @@ export class Canvas extends EventCenter {
         top: start.y,
         fill: 'red',
       });
+      diamond.on('added', () => {
+        console.log('diamond被添加了');
+        this.modifiedList.push([diamond.objectId, { ...diamond.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      diamond.on('modified', () => {
+        console.log('diamond被修改了');
+        this.modifiedList.push([diamond.objectId, { ...diamond.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(diamond);
     }
   }
@@ -926,6 +946,16 @@ export class Canvas extends EventCenter {
         left: start.x + (end.x - start.x) / 2,
         top: start.y - Math.abs(end.x - start.x) / 2,
         fill: 'red',
+      });
+      triangle.on('added', () => {
+        console.log('triangle被添加了');
+        this.modifiedList.push([triangle.objectId, { ...triangle.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      triangle.on('modified', () => {
+        console.log('triangle被修改了');
+        this.modifiedList.push([triangle.objectId, { ...triangle.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
       });
       this.add(triangle);
     }
@@ -959,6 +989,16 @@ export class Canvas extends EventCenter {
         top: start.y,
         roundAngle: 360,
         fill: 'green',
+      });
+      round.on('added', () => {
+        console.log('round被添加了');
+        this.modifiedList.push([round.objectId, { ...round.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      round.on('modified', () => {
+        console.log('round被修改了');
+        this.modifiedList.push([round.objectId, { ...round.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
       });
       this.add(round);
     }
@@ -994,6 +1034,16 @@ export class Canvas extends EventCenter {
         direction: end.x - start.x,
         headlen: this.brush.headlen || 15,
       });
+      arrow.on('added', () => {
+        console.log('arrow被添加了');
+        this.modifiedList.push([arrow.objectId, { ...arrow.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      arrow.on('modified', () => {
+        console.log('arrow被修改了');
+        this.modifiedList.push([arrow.objectId, { ...arrow.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(arrow);
     }
   }
@@ -1003,6 +1053,16 @@ export class Canvas extends EventCenter {
       top: target.y,
       size: 20,
       text: this.brush.text,
+    });
+    text.on('added', () => {
+      console.log('text被添加了');
+      this.modifiedList.push([text.objectId, { ...text.originalState }, 'added']);
+      console.log('modifiedList', this.modifiedList);
+    });
+    text.on('modified', () => {
+      console.log('text被修改了');
+      this.modifiedList.push([text.objectId, { ...text.originalState }, 'modified']);
+      console.log('modifiedList', this.modifiedList);
     });
     this.add(text);
   }
@@ -1034,6 +1094,16 @@ export class Canvas extends EventCenter {
         width: maxx - minx,
         height: maxy - miny,
         penPath: penPathList,
+      });
+      penPath.on('added', () => {
+        console.log('penPath被添加了');
+        this.modifiedList.push([penPath.objectId, { ...penPath.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      penPath.on('modified', () => {
+        console.log('penPath被修改了');
+        this.modifiedList.push([penPath.objectId, { ...penPath.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
       });
       this.add(penPath);
       this.penPath = [];
