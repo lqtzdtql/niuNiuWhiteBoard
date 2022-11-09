@@ -19,6 +19,7 @@ const cursorMap = {
   mb: 's-resize',
 };
 export class Canvas extends EventCenter {
+  public canvasId: string;
   /** 画布宽度 */
   public width: number;
   /** 画布高度 */
@@ -50,11 +51,12 @@ export class Canvas extends EventCenter {
   public hoverCursor: string = 'move';
   public moveCursor: string = 'move';
   public rotationCursor: string = 'crosshair';
-  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮 */
+  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮9文字10自由线条 */
   public brush: {} = { type: 0 };
   public start: Pos = {};
   public end: Pos = {};
   public temp: Pos = {};
+  public penPath: Pos[] = [];
 
   public viewportTransform: number[] = [1, 0, 0, 1, 0, 0];
   public vptCoords: {};
@@ -281,7 +283,6 @@ export class Canvas extends EventCenter {
       // }
     } else if (this.brush.type === 8) {
       let target = this.findTarget(e);
-      console.log(target);
       if (target) {
         this.delete(target.objectId);
       } else {
@@ -291,9 +292,19 @@ export class Canvas extends EventCenter {
           this.renderAll();
         }
       }
+    } else if (this.brush.type === 10) {
+      if (this._activeObject) {
+        // 如果当前有激活物体
+        this._activeObject.setActive(false);
+        this.renderAll();
+      }
+      this.penPath.push(this.getPointer(e, this.upperCanvasEl));
     } else {
-      this.clearContext(this.contextTop);
-      this.deactivateAllWithDispatch();
+      if (this._activeObject) {
+        // 如果当前有激活物体
+        this._activeObject.setActive(false);
+        this.renderAll();
+      }
       this.start = this.getPointer(e, this.upperCanvasEl);
     }
   }
@@ -416,7 +427,10 @@ export class Canvas extends EventCenter {
 
       this.emit('mouse:move', { target, e });
       target && target.emit('mousemove', { e });
-    } else if (this.brush.type !== 8) {
+    } else if (this.brush.type === 10 && this.penPath.length) {
+      this.penPath.push(this.getPointer(e, this.upperCanvasEl));
+      this.renderTop();
+    } else if (this.brush.type !== 8 && this.brush.type !== 9) {
       this.temp = this.getPointer(e, this.upperCanvasEl);
       this.renderTop();
     }
@@ -514,7 +528,13 @@ export class Canvas extends EventCenter {
         '_drawArrow',
       ];
       this.end = this.getPointer(e, this.upperCanvasEl);
-      this[_drawFunctionList[this.brush.type]](2, this.start, this.end);
+      if (this.brush.type === 9) {
+        this._drawText(this.start);
+      } else if (this.brush.type === 10) {
+        this._drawPenPath(this.penPath, 2);
+      } else {
+        this[_drawFunctionList[this.brush.type]](this.start, this.end, 2);
+      }
       this.start = {};
     }
     console.log('1111111111', this._objects);
@@ -764,7 +784,11 @@ export class Canvas extends EventCenter {
       '_drawRound',
       '_drawArrow',
     ];
-    if (this.brush.type !== 0) this[_drawFunctionList[this.brush.type]](1, this.start, this.temp);
+    if (this.brush.type === 10) {
+      this._drawPenPath(this.penPath, 1);
+    } else if (this.brush.type !== 0) {
+      this[_drawFunctionList[this.brush.type]](this.start, this.temp, 1);
+    }
 
     // 如果有选中物体
     // let activeGroup = this.getActiveGroup();
@@ -774,7 +798,7 @@ export class Canvas extends EventCenter {
     return this;
   }
 
-  _drawLine(lab, start, end) {
+  _drawLine(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -795,7 +819,7 @@ export class Canvas extends EventCenter {
     }
   }
 
-  _drawRect(lab, start, end) {
+  _drawRect(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -825,7 +849,7 @@ export class Canvas extends EventCenter {
     }
   }
 
-  _drawDiamond(lab, start, end) {
+  _drawDiamond(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -854,7 +878,7 @@ export class Canvas extends EventCenter {
     }
   }
 
-  _drawTriangle(lab, start, end) {
+  _drawTriangle(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -882,7 +906,7 @@ export class Canvas extends EventCenter {
     }
   }
 
-  _drawRound(lab, start, end) {
+  _drawRound(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -915,7 +939,7 @@ export class Canvas extends EventCenter {
     }
   }
 
-  _drawArrow(lab, start, end) {
+  _drawArrow(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -948,6 +972,53 @@ export class Canvas extends EventCenter {
       this.add(arrow);
     }
   }
+  _drawText(target) {
+    const text = new FabricObjects.Text({
+      left: target.x,
+      top: target.y,
+      size: 20,
+      text: this.brush.text,
+    });
+    this.add(text);
+  }
+  _drawPenPath(penPathList, lab) {
+    let sx = 0,
+      sy = 0,
+      maxx = Number.MIN_SAFE_INTEGER,
+      maxy = Number.MIN_SAFE_INTEGER,
+      minx = Number.MAX_SAFE_INTEGER,
+      miny = Number.MAX_SAFE_INTEGER;
+    for (const i of penPathList) {
+      sx += i.x;
+      sy += i.y;
+      maxx = Math.max(maxx, i.x);
+      maxy = Math.max(maxy, i.y);
+      minx = Math.min(minx, i.x);
+      miny = Math.min(miny, i.y);
+    }
+    if (lab === 1) {
+      this.contextTop.lineWidth = this.brush.strokeWidth;
+      this.contextTop.strokeStyle = this.brush.stroke;
+      for (let i = 1; i < this.penPath.length; i++) {
+        this.contextTop.beginPath();
+        this.contextTop.moveTo(this.penPath[i - 1].x, this.penPath[i - 1].y);
+        this.contextTop.lineTo(this.penPath[i].x, this.penPath[i].y);
+        this.contextTop.closePath();
+        this.contextTop.stroke();
+      }
+    } else {
+      const penPath = new FabricObjects.Pen({
+        left: (maxx + minx) / 2,
+        top: (maxy + miny) / 2,
+        width: maxx - minx,
+        height: maxy - miny,
+        penPath: penPathList,
+      });
+      this.add(penPath);
+      this.penPath = [];
+    }
+  }
+
   /** 绘制框选区域 */
   _drawSelection() {
     let ctx = this.contextTop,

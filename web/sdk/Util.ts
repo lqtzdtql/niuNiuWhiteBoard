@@ -425,4 +425,27 @@ export class Util {
       ')'
     );
   }
+
+  static getTextHeight = function (font: string, size: number) {
+    var text = document.createElement('span');
+    text.style['fontFamily'] = font;
+    text.style['fontSize'] = size + 'px';
+    text.innerHTML = 'H';
+    var block = document.createElement('div');
+    block.style.display = 'inline-block';
+    block.style.width = '1px';
+    block.style.height = '0px';
+    var div = document.createElement('div');
+    div.appendChild(text);
+    div.appendChild(block);
+    document.body.appendChild(div);
+    var height = 0;
+    try {
+      block.style.verticalAlign = 'bottom';
+      height = block.offsetTop - text.offsetTop;
+    } finally {
+      div.remove();
+    }
+    return height;
+  };
 }
