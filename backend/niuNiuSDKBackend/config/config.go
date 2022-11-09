@@ -8,20 +8,19 @@ import (
 
 type Config struct {
 	AppName        string
-	MySQL          MySQLConfig
+	DbConfig       DbConfig
 	Log            LogConfig
 	StaticPath     PathConfig
 	MsgChannelType MsgChannelType
 }
 
-// MySQL相关配置
-type MySQLConfig struct {
-	Host        string
-	Name        string
-	Password    string
-	Port        int
-	TablePrefix string
-	User        string
+type DbConfig struct {
+	DriverName   string `json:"driverName"`
+	Dsn          string `json:"dsn"`
+	ShowSql      bool   `json:"showSql"`
+	ShowExecTime bool   `json:"showExecTime"`
+	MaxIdle      int    `json:"maxIdle"`
+	MaxOpen      int    `json:"maxOpen"`
 }
 
 // 日志保存地址

@@ -2,21 +2,20 @@ package server
 
 import (
 	"github.com/gorilla/websocket"
-	"niuNiuSDKBackend/common/kafka"
 	"niuNiuSDKBackend/common/log"
-	"niuNiuSDKBackend/config"
 	"niuNiuSDKBackend/internal/models"
 )
 
 type Client struct {
-	Conn *websocket.Conn
-	Name string
-	Send chan []byte
+	Conn          *websocket.Conn //一个账号，一个连接
+	Name          string
+	Send          chan []byte
+	HeartbeatTime int64 // 前一次心跳时间
 }
 
 func (c *Client) Read() {
 	defer func() {
-		MyServer.Ungister <- c
+		MyServer.UnRegister <- c
 		c.Conn.Close()
 	}()
 
@@ -25,7 +24,7 @@ func (c *Client) Read() {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
 			log.Logger.Error("client read message error", log.Any("client read message error", err.Error()))
-			MyServer.Ungister <- c
+			MyServer.UnRegister <- c
 			c.Conn.Close()
 			break
 		}
@@ -33,18 +32,14 @@ func (c *Client) Read() {
 		msg := &models.Message{}
 
 		// pong
-		if msg.Type == models.HEAT_BEAT {
+		if msg.ContentType == models.HEAT_BEAT {
 			pong := &models.Message{
-				Content: models.PONG,
-				Type:    models.HEAT_BEAT,
+				Content:     models.PONG,
+				ContentType: models.HEAT_BEAT,
 			}
 			c.Conn.WriteJSON(pong)
 		} else {
-			if config.GetConfig().MsgChannelType.ChannelType == models.KAFKA {
-				kafka.Send(message)
-			} else {
-				MyServer.Broadcast <- message
-			}
+			MyServer.Broadcast <- message
 		}
 	}
 }
