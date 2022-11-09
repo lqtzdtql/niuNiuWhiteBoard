@@ -202,7 +202,7 @@ func DoLogin(c *gin.Context, user User) error {
 		if err != nil {
 			return err
 		}
-		c.Header(REFRESH_TOKEN, refreshToken)
+		c.Writer.Header().Set(REFRESH_TOKEN, refreshToken)
 	}
 	return nil
 }

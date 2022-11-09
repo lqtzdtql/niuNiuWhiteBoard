@@ -2,26 +2,17 @@ package models
 
 import (
 	"net/http"
-	"net/url"
 	"niuNiuWhiteBoardBackend/common/log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-xorm/xorm"
 
-	"niuNiuWhiteBoardBackend/common/utils"
 	conf "niuNiuWhiteBoardBackend/config"
 )
 
 func Auth(c *gin.Context) {
 	db := c.MustGet("db").(*xorm.Engine)
-	u, err := url.Parse(c.Request.RequestURI)
-	if err != nil {
-		panic(err)
-	}
-	if utils.InArrayString(u.Path, &conf.Cfg.Routes) {
-		c.Next()
-		return
-	}
+
 	//开启jwt
 	if conf.Cfg.OpenJwt {
 		accessToken, has := GetParam(c, ACCESS_TOKEN)
