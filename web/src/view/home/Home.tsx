@@ -29,6 +29,10 @@ const Home: React.FC = () => {
     { label: '游戏房', value: 'playing_room' },
   ];
 
+  useEffect(() => {
+    appendData();
+  }, []);
+
   const showCreateModal = () => {
     setIsCreateModalOpen(true);
   };
@@ -108,8 +112,8 @@ const Home: React.FC = () => {
     // ]);
   };
 
-  const enterRoom = (item: IRoom) => {
-    navigate(`/room`, { state: item });
+  const enterRoom = async (item: IRoom) => {
+    navigate(`/room`, { state: item, replace: true });
   };
 
   const signout = async () => {
@@ -118,7 +122,7 @@ const Home: React.FC = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('userInfo');
       localStorage.removeItem('remember');
-      navigate('/login');
+      navigate('/login', { replace: true });
     } else {
       notification.open({
         message: '出错了',
@@ -126,10 +130,6 @@ const Home: React.FC = () => {
       });
     }
   };
-
-  useEffect(() => {
-    appendData();
-  }, []);
 
   const onScroll = (e: React.UIEvent<HTMLElement, UIEvent>) => {
     if (e.currentTarget.scrollHeight - e.currentTarget.scrollTop === ContainerHeight) {

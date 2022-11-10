@@ -23,7 +23,7 @@ const Login = () => {
   useEffect(() => {
     if (isLogin) {
       console.log('登录成功,正在跳转界面');
-      navigate('/home');
+      navigate('/home', { replace: true });
     } else {
       console.log('等待用户登录');
     }

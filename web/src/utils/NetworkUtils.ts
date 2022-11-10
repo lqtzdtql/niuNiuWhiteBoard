@@ -41,6 +41,7 @@ const fetchRes = async (type: string, url: string, params: {}) => {
   }
   try {
     const response = await fetch(url, requestConfig);
+    // console.log(response);
 
     const responseJson = response.json();
 

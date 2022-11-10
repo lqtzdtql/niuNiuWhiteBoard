@@ -21,7 +21,7 @@ const Register: React.FC = () => {
     const response: IRegisterResponse = await register(params);
 
     if (response.code === 200) {
-      navigate('/login');
+      navigate('/login', { replace: true });
     } else {
       notification.open({
         message: '出错了',

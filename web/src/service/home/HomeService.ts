@@ -12,4 +12,9 @@ async function roomList(): Promise<IRoomListResponse> {
 async function logout(): Promise<IBaseResponse> {
   return fetchRes('get', '/v1/logout', {});
 }
-export { create, roomList, logout };
+
+async function getChatRoomToken(uuid: string) {
+  return fetchRes('get', `/v1/rooms/${uuid}/rtc`, {});
+}
+
+export { create, roomList, logout, getChatRoomToken };
