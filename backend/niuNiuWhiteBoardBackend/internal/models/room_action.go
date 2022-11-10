@@ -27,6 +27,7 @@ func CreateRoom(c *gin.Context) {
 	room := Room{
 		Name:        nameAndType.Name,
 		HostUUID:    currentUser.UUID,
+		HostName:    currentUser.Name,
 		UUID:        ulid.Make().String(),
 		CreatedTime: time.Now(),
 		UpdatedTime: time.Now(),
@@ -86,7 +87,11 @@ func CreateRoom(c *gin.Context) {
 		log.Logger.Error("enter room failed", log.Any("enter room failed", err.Error()))
 	}
 
-	c.JSON(200, roomRaw)
+	c.JSON(200, gin.H{
+		"message": "创建房间成功",
+		"room":    roomRaw,
+		"code":    200,
+	})
 }
 
 func GetRoomInfo(c *gin.Context) {
@@ -116,7 +121,11 @@ func GetRoomInfo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, roomRaw)
+	c.JSON(200, gin.H{
+		"message": "获取房间信息成功",
+		"room":    roomRaw,
+		"code":    200,
+	})
 }
 
 func GetRoomRTC(c *gin.Context) {
@@ -165,8 +174,8 @@ func GetRoomWhiteBoard(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user_uuid": currentUser.UUID,
-		"token":     token,
+		"code":  "200",
+		"token": token,
 	})
 }
 

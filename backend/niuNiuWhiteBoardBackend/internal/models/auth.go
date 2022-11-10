@@ -12,7 +12,6 @@ import (
 
 func Auth(c *gin.Context) {
 	db := c.MustGet("db").(*xorm.Engine)
-
 	//开启jwt
 	if conf.Cfg.OpenJwt {
 		accessToken, has := GetParam(c, ACCESS_TOKEN)

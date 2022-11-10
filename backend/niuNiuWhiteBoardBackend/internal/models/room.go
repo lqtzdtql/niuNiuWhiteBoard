@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	RoomTypeTeaching = "teaching_room" //教学房
-	RoomTypePlaying  = "playing_room"  //游戏房
+	RoomTypeTeaching = "教学房" //教学房
+	RoomTypePlaying  = "游戏房" //游戏房
 )
 
 const (
@@ -19,6 +19,7 @@ type Room struct {
 	UUID         string        `json:"uuid" xorm:"'uuid' not null default '' VARCHAR(128)"`
 	Name         string        `json:"name" xorm:"'name' not null default '' VARCHAR(50)"`
 	HostUUID     string        `json:"host_uuid" xorm:"'host_uuid' not null default '' VARCHAR(128)"`
+	HostName     string        `json:"host_name" xorm:"'host_name' not null default '' VARCHAR(50)"`
 	CreatedTime  time.Time     `json:"created_time" xorm:"'created_time'"`
 	UpdatedTime  time.Time     `json:"updated_time" xorm:"'updated_time' updated"`
 	DeletedTime  time.Time     `json:"deleted_time" xorm:"'deleted_time' datetime deleted"`
@@ -31,6 +32,7 @@ type RoomRaw struct {
 	UUID         string           `json:"uuid" xorm:"'uuid' not null default '' VARCHAR(128)"`
 	Name         string           `json:"name" xorm:"name not null default '' VARCHAR(50)"`
 	HostUUID     string           `json:"host_uuid" xorm:"'host_uuid' not null default '' VARCHAR(128)"`
+	HostName     string           `json:"host_name" xorm:"'host_name' not null default '' VARCHAR(50)"`
 	CreatedTime  time.Time        `json:"created_time" xorm:"'created_time'  TIMESTAMP"`
 	UpdatedTime  time.Time        `json:"updated_time" xorm:"'updated_time' updated"`
 	Type         string           `json:"type"  xorm:"'type' not null default '' VARCHAR(20)"`
@@ -40,7 +42,7 @@ type RoomRaw struct {
 type RoomInfo struct {
 	UUID     string `json:"uuid" xorm:"'uuid' not null default '' VARCHAR(128)"`
 	Name     string `json:"name" xorm:"'name' not null default '' VARCHAR(50)"`
-	HostUUID string `json:"host_uuid" xorm:"'host_uuid' not null default '' VARCHAR(128)"`
+	HostName string `json:"host_name" xorm:"'host_name' not null default '' VARCHAR(50)"`
 	Type     string `json:"type"  xorm:"'type' not null default '' VARCHAR(20)"`
 }
 

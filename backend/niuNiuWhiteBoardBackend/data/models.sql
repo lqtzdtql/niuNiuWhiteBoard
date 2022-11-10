@@ -27,6 +27,7 @@ CREATE TABLE `rooms` (
     `uuid` varchar(128) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT'用户唯一标识符',
     `name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '房间名称',
     `host_uuid` varchar(128) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '主持人标识符',
+    `host_name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '主持人名称',
     `type` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '房间类型',
     `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '建房时间',
     `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
