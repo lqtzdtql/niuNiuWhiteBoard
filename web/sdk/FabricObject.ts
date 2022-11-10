@@ -103,8 +103,6 @@ export class FabricObject extends EventCenter {
   constructor(options) {
     super();
     this.initialize(options);
-    this.on('lock', () => {});
-    this.on('unlock', () => {});
   }
   initialize(options) {
     options && this.setOptions(options);
@@ -190,7 +188,7 @@ export class FabricObject extends EventCenter {
     // const m = [cos * this.scaleX, sin * this.scaleX, -sin * this.scaleY, cos * this.scaleY, center.x, center.y];
   }
 
-  updateLock(isLocked) {
+  updateLock(isLocked: boolean) {
     this.isLocked = isLocked;
   }
   /** 绘制激活物体边框 */

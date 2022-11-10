@@ -1,29 +1,31 @@
-import { FabricObject } from './FabricObject';
-import { Rect } from './Rect';
-import { Triangle } from './Triangle';
-import { Round } from './Round';
-import { Group } from './Group';
-import { Curve } from './Curve';
-import { Diamond } from './Diamond';
-import { Line } from './Line';
-import { Arrow } from './Arrow';
-import { Text } from './Text';
-import { Pen } from './Pen';
-import { FabricImage } from './FabricImage';
+import { Room } from './Room';
 
-// 最终导出的东西都挂载到 fabric 上面
+type paramsType = {
+  token: string;
+  onlyRead: boolean;
+  el: HTMLCanvasElement;
+  elOptions?: {};
+};
 
-export class FabricObjects {
-  static FabricObject = FabricObject;
-  static Rect = Rect;
-  static Triangle = Triangle;
-  static Round = Round;
-  static Curve = Curve;
-  static Diamond = Diamond;
-  static Line = Line;
-  static Arrow = Arrow;
-  static Text = Text;
-  static Pen = Pen;
-  static Group = Group;
-  static FabricImage = FabricImage;
+export async function joinRoom(params: paramsType) {
+  const res = await fetch(`/auth?token=${params.token}`);
+  if (res.status >= 200 && res.status < 300) {
+    const resData = await res.json();
+    const { user_uuid, room_uuid, code, message } = resData;
+    if (code !== 200) {
+      return message;
+    } else {
+      const roomData = {
+        roomId: room_uuid,
+        userId: user_uuid,
+        onlyRead: params.onlyRead,
+        el: params.el,
+        elOptions: params.elOptions,
+      };
+      const room = new Room(roomData);
+      return room;
+    }
+  } else {
+    return res.statusText;
+  }
 }

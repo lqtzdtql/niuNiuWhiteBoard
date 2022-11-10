@@ -16,7 +16,7 @@ export class EventCenter {
     this.__eventListeners[eventName].push(handler);
     return this;
   }
-  off(eventName, handler) {
+  off(eventName, handler?) {
     if (!this.__eventListeners) {
       return this;
     }
@@ -48,7 +48,7 @@ export class EventCenter {
     this.__eventListeners[eventName] = listenersForEvent.filter((value) => value !== false);
     return this;
   }
-  _removeEventListener(eventName, handler) {
+  _removeEventListener(eventName, handler?) {
     if (!this.__eventListeners[eventName]) {
       return;
     }

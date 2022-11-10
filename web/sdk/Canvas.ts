@@ -5,7 +5,7 @@ import { FabricObject } from './FabricObject';
 import { Group } from './Group';
 import { Offset, Pos, GroupSelector, CurrentTransform } from './interface';
 import { EventCenter } from './EventCenter';
-import { FabricObjects } from './index';
+import { FabricObjects } from './Fabric';
 
 const STROKE_OFFSET = 0.5;
 const cursorMap = {
@@ -72,12 +72,13 @@ export class Canvas extends EventCenter {
   private _groupSelector: GroupSelector;
   /** 当前选中的组 */
   public _activeGroup: Group;
-  public canvasId: string = '';
   public modifiedList: [] = [];
   public modifiedAgainList: [] = [];
+  public bindRoomId: string;
+  public onlyRead: boolean;
 
   /** 画布中所有添加的物体 */
-  private _objects: FabricObject[];
+  public _objects: FabricObject[];
   /** 整个画布到上面和左边的偏移量 */
   private _offset: Offset;
   /** 当前物体的变换信息，src 目录下中有截图 */
@@ -231,6 +232,7 @@ export class Canvas extends EventCenter {
     this.calcOffset();
   }
   __onMouseDown(e: MouseEvent) {
+    if (this.onlyRead) return;
     // 只处理左键点击，要么是拖蓝事件、要么是点选事件
     let isLeftClick = 'which' in e ? e.which === 1 : e.button === 1;
     if (!isLeftClick) return;
@@ -297,7 +299,7 @@ export class Canvas extends EventCenter {
     } else if (this.brush.type === 8) {
       let target = this.findTarget(e);
       if (target) {
-        this.delete(target.objectId);
+        this.delete(target.objectId, true);
       } else {
         this.discardActiveObject();
         this.renderAll();
@@ -316,6 +318,7 @@ export class Canvas extends EventCenter {
    * 如果是涂鸦模式，只绘制 upper-canvas
    * 如果是图片变换，只绘制 upper-canvas */
   __onMouseMove(e: MouseEvent) {
+    if (this.onlyRead) return;
     if (this.brush.type === 0) {
       let target, pointer;
 
@@ -441,6 +444,7 @@ export class Canvas extends EventCenter {
   }
   /** 主要就是清空拖蓝选区，设置物体激活状态，重新渲染画布 */
   __onMouseUp(e: MouseEvent) {
+    if (this.onlyRead) return;
     if (this.brush.type === 0) {
       let target;
       if (this._currentTransform) {
@@ -831,7 +835,7 @@ export class Canvas extends EventCenter {
         this.modifiedList.push([line.objectId, { ...line.originalState }, 'modified']);
         console.log('modifiedList', this.modifiedList);
       });
-      this.add(line);
+      this.add(true, line);
     }
   }
 
@@ -871,7 +875,7 @@ export class Canvas extends EventCenter {
         this.modifiedList.push([rect.objectId, { ...rect.originalState }, 'modified']);
         console.log('modifiedList', this.modifiedList);
       });
-      this.add(rect);
+      this.add(true, rect);
     }
   }
 
@@ -910,7 +914,7 @@ export class Canvas extends EventCenter {
         this.modifiedList.push([diamond.objectId, { ...diamond.originalState }, 'modified']);
         console.log('modifiedList', this.modifiedList);
       });
-      this.add(diamond);
+      this.add(true, diamond);
     }
   }
 
@@ -948,7 +952,7 @@ export class Canvas extends EventCenter {
         this.modifiedList.push([triangle.objectId, { ...triangle.originalState }, 'modified']);
         console.log('modifiedList', this.modifiedList);
       });
-      this.add(triangle);
+      this.add(true, triangle);
     }
   }
 
@@ -991,7 +995,7 @@ export class Canvas extends EventCenter {
         this.modifiedList.push([round.objectId, { ...round.originalState }, 'modified']);
         console.log('modifiedList', this.modifiedList);
       });
-      this.add(round);
+      this.add(true, round);
     }
   }
 
@@ -1035,7 +1039,7 @@ export class Canvas extends EventCenter {
         this.modifiedList.push([arrow.objectId, { ...arrow.originalState }, 'modified']);
         console.log('modifiedList', this.modifiedList);
       });
-      this.add(arrow);
+      this.add(true, arrow);
     }
   }
   _drawText(target) {
@@ -1055,7 +1059,7 @@ export class Canvas extends EventCenter {
       this.modifiedList.push([text.objectId, { ...text.originalState }, 'modified']);
       console.log('modifiedList', this.modifiedList);
     });
-    this.add(text);
+    this.add(true, text);
   }
   _drawPenPath(penPathList, lab) {
     let maxx = Number.MIN_SAFE_INTEGER,
@@ -1096,7 +1100,7 @@ export class Canvas extends EventCenter {
         this.modifiedList.push([penPath.objectId, { ...penPath.originalState }, 'modified']);
         console.log('modifiedList', this.modifiedList);
       });
-      this.add(penPath);
+      this.add(true, penPath);
       this.penPath = [];
     }
   }
@@ -1107,7 +1111,7 @@ export class Canvas extends EventCenter {
       const temp = this.modifiedList.pop();
       for (const i of this._objects) {
         if (i.objectId === temp[0]) {
-          if (i.lock) {
+          if (i.isLocked) {
             this.modifiedList.push(temp);
             return;
           }
@@ -1137,7 +1141,7 @@ export class Canvas extends EventCenter {
       const temp = this.modifiedAgainList.pop();
       for (const i of this._objects) {
         if (i.objectId === temp[0]) {
-          if (i.lock) {
+          if (i.isLocked) {
             this.modifiedAgainList.push(temp);
             return;
           }
@@ -1188,10 +1192,12 @@ export class Canvas extends EventCenter {
       // 如果当前有激活物体
       this.discardActiveObject();
     }
-    object.emit('lock');
-    this._activeObject = object;
-    object.setActive(true);
-
+    this.emit('sendLock', { objectId: object.objectId });
+    object.on('canLock', () => {
+      this._activeObject = object;
+      object.setActive(true);
+      this.renderAll();
+    });
     this.renderAll();
 
     // this.emit('object:selected', { target: object, e });
@@ -1321,7 +1327,7 @@ export class Canvas extends EventCenter {
   discardActiveObject() {
     if (this._activeObject) {
       this._activeObject.setActive(false);
-      this._activeObject.emit('unlock');
+      this.emit('sendUnlock', { objectId: this._activeObject.objectId });
     }
     this._activeObject = null;
     return this;
@@ -1608,38 +1614,47 @@ export class Canvas extends EventCenter {
    * 如果一次性加入大量元素，就会做很多无用功，
    * 所以可以加一个属性来先批量添加元素，最后再一次渲染（手动调用 renderAll 函数即可）
    */
-  add(...args): Canvas {
+  add(isFirst: boolean, ...args): Canvas {
     this._objects.push.apply(this._objects, args);
     for (let i = args.length; i--; ) {
-      this._initObject(args[i]);
+      this._initObject(args[i], isFirst);
       args[i].timestamp = new Date().valueOf();
     }
     this.renderAll();
     return this;
   }
-  delete(objectId): Canvas {
-    console.log(objectId);
-    for (let i = 0; i < this._objects.length; i++) {
-      if (this._objects[i].objectId === objectId) {
-        if (this._objects[i].active) {
-          this._objects.splice(i, 1);
-        } else {
-          this.setActiveObject(this._objects[i]);
+  delete(objectId, isFirst: boolean): Canvas {
+    if (isFirst) {
+      for (let i = 0; i < this._objects.length; i++) {
+        if (this._objects[i].objectId === objectId) {
+          if (this._objects[i].active) {
+            this.emit('object:delete', { target: this._objects[i] });
+            this._objects.splice(i, 1);
+          } else {
+            this.setActiveObject(this._objects[i]);
+          }
+          break;
         }
-        break;
+      }
+    } else {
+      for (let i = 0; i < this._objects.length; i++) {
+        if (this._objects[i].objectId === objectId) {
+          this._objects.splice(i, 1);
+        }
       }
     }
-    console.log('2222222223');
     this.renderAll();
     return this;
   }
-  _initObject(obj: FabricObject) {
+  _initObject(obj: FabricObject, isFirst: boolean) {
     obj.setupState();
     obj.setCoords();
     obj.canvas = this;
     obj.objectId = new Date().valueOf();
-    this.emit('object:added', { target: obj });
-    obj.emit('added');
+    if (isFirst) {
+      this.emit('object:added', { target: obj });
+      obj.emit('added');
+    }
   }
   clearContext(ctx: CanvasRenderingContext2D): Canvas {
     ctx && ctx.clearRect(0, 0, this.width, this.height);
