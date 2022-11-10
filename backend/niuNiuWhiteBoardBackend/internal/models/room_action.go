@@ -184,7 +184,7 @@ func ListRoom(c *gin.Context) {
 	var roomList []RoomInfo
 	roomList = make([]RoomInfo, 0)
 	//获取房间列表
-	err := db.Table(RoomTable).Iterate(new(RoomInfo), func(i int, bean interface{}) error {
+	err := db.Table(RoomTable).Where("delete_time is null").Iterate(new(RoomInfo), func(i int, bean interface{}) error {
 		p := bean.(*RoomInfo)
 		roomList = append(roomList, *p)
 		return nil
@@ -240,7 +240,7 @@ func EnterRoom(c *gin.Context) {
 	}
 
 	//获取参与者列表
-	err = db.Table(ParticipantTable).Where("room_uuid = ?", room.UUID).Iterate(new(Participant), func(i int, bean interface{}) error {
+	err = db.Table(ParticipantTable).Where("room_uuid = ? and delete_time is null", room.UUID).Iterate(new(Participant), func(i int, bean interface{}) error {
 		p := bean.(*Participant)
 		room.Participants = append(room.Participants, *p)
 		return nil
