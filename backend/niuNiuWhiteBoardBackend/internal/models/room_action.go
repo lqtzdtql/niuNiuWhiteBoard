@@ -184,7 +184,7 @@ func ListRoom(c *gin.Context) {
 	var roomList []RoomInfo
 	roomList = make([]RoomInfo, 0)
 	//获取房间列表
-	err := db.Table(RoomTable).Where("deleted_time IS NULL").Iterate(new(RoomInfo), func(i int, bean interface{}) error {
+	err := db.Table(RoomTable).Iterate(new(RoomInfo), func(i int, bean interface{}) error {
 		p := bean.(*RoomInfo)
 		roomList = append(roomList, *p)
 		return nil

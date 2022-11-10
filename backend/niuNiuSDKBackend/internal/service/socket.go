@@ -3,12 +3,11 @@ package service
 import (
 	"net/http"
 	"niuNiuSDKBackend/common/log"
-	"niuNiuSDKBackend/internal/jwt"
+	"niuNiuSDKBackend/internal/models"
 	"niuNiuSDKBackend/internal/server"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"go.uber.org/zap"
 )
 
 var upGrader = websocket.Upgrader{
@@ -18,41 +17,26 @@ var upGrader = websocket.Upgrader{
 }
 
 func RunSocket(c *gin.Context) {
-	token := c.Query("Access-Token")
-	clientClaims, err := jwt.ParseToken(token)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "token解析失败", "code": 501})
-		log.Logger.Error("token parse failed", log.Any("token parse failed", err.Error()))
-		return
-	}
-	//TODO：鉴权逻辑
-	success, err := Auth(clientClaims)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
-		log.Logger.Error("server error", log.Any("server error", err.Error()))
-		return
-	}
-	if !success {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "鉴权失败", "code": 401})
-		log.Logger.Warn("auth failed", log.Any("auth failed", err.Error()))
-		return
-	}
+	room := c.MustGet("room").(*models.Room)
+	participant := c.MustGet("participant").(*models.Participant)
 
-	log.Logger.Info("newParticipant", zap.String("newParticipant", clientClaims.UserName))
 	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": "websocket升级失败", "code": 401})
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": "websocket upgrade failed", "code": 401})
 		log.Logger.Error("Upgrade failed", log.Any("Upgrade failed", err.Error()))
 		return
 	}
+	log.Logger.Info("websocket build success", log.Any("websocket build success", ws.RemoteAddr()))
 
 	client := &server.Client{
-		UUID: clientClaims.UserName,
-		Conn: ws,
-		Send: make(chan []byte),
+		UUID:     participant.UUID,
+		Conn:     ws,
+		RoomUUID: room.UUID,
+		Send:     make(chan []byte),
 	}
-
 	server.MyServer.Register <- client
 	go client.Read()
+	log.Logger.Info("start to read", log.Any("start to read", ws.RemoteAddr()))
 	go client.Write()
+	log.Logger.Info("start to write", log.Any("start to write", ws.RemoteAddr()))
 }

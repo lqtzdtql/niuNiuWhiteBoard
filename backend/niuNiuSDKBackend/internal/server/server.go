@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"niuNiuSDKBackend/common/log"
 	"niuNiuSDKBackend/internal/models"
-	"niuNiuSDKBackend/internal/service"
 	"sync"
 	"time"
 )
@@ -31,8 +30,8 @@ func NewServer() *Server {
 
 // 消息类型
 const (
-	HeartbeatCheckTime = 9  // 心跳检测几秒检测一次
-	HeartbeatTime      = 20 // 心跳距离上一次的最大时间
+	HeartbeatCheckTime = 3  // 心跳检测几秒检测一次
+	HeartbeatTime      = 15 // 心跳距离上一次的最大时间
 )
 
 // 维持心跳
@@ -82,7 +81,7 @@ func (s *Server) register() {
 		case message := <-s.Broadcast:
 			msg := &models.Message{}
 			json.Unmarshal(message, msg)
-			service.MessageHandle(msg, s)
+			MessageHandle(msg, s)
 		}
 	}
 }
@@ -108,4 +107,20 @@ func (s *Server) Start() {
 		}()
 		s.register()
 	}()
+}
+
+func MessageHandle(msg *models.Message, s *Server) {
+	if msg.ContentType == models.SIGNALING {
+
+	} else if msg.ContentType == models.SWITCH_BOARD {
+		//TODO: 此处查找出数据库，将所有保存的绘制信息找出，并且conn.Send <- 绘图信息
+	} else if msg.ContentType == models.OBJECT_NEW {
+
+	} else if msg.ContentType == models.OBJECT_MODIFY {
+
+	} else if msg.ContentType == models.OBJECT_DELETE {
+
+	} else if msg.ContentType == models.DRAWING_LOCK {
+
+	}
 }

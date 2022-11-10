@@ -166,7 +166,6 @@ func SignupByMobile(c *gin.Context) {
 
 func Info(c *gin.Context) {
 	uuid := c.Param("uuid")
-	println(uuid)
 	db := c.MustGet("db").(*xorm.Engine)
 
 	user := User{}

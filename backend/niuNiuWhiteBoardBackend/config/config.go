@@ -11,7 +11,7 @@ type Config struct {
 	OpenJwt      bool          `json:"openJwt"`
 	LogConfig    *LogConfig    `json:"logConfig"`
 	DbConfig     *DbConfig     `json:"dbConfig"`
-	QiniuService *QiniuService `json:"qiniu_service"`
+	QiniuService *QiniuService `json:"qiniuService"`
 	Whiteboard   *Whiteboard   `json:"whiteboard"`
 }
 
@@ -31,9 +31,9 @@ type LogConfig struct {
 }
 
 type QiniuService struct {
-	AccessKey string `json:"access_key"`
-	SecretKey string `json:"secret_key"`
-	RTCAppID  string `json:"rtc_app_id"`
+	AccessKey string `json:"accessKey"`
+	SecretKey string `json:"secretKey"`
+	RTCAppID  string `json:"rtcAppId"`
 }
 
 type Whiteboard struct {

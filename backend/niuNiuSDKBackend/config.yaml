@@ -1,31 +1,18 @@
-host: localhost:8282
-routes:
-  - /signup
-  - /login
-  - /v1/userinfo/:uuid
-  - /v1/roomlist
-  - /login/mobile
-  - /signup/mobile
-  - /signup/mobile/exist
-  - /v1/rooms/:uuid/whiteboard
-  - /v1/logout
-openJwt: true
-logConfig:
-  path: ./run/niuNiuWhiteBoard
-  level: debug
 dbConfig:
   driverName: mysql
-  dsn: root:Gcx199815.@tcp(127.0.0.1:3306)/niuNiuWhiteBoard?charset=utf8mb4&parseTime=true&loc=Local
+  dsn: root:Gcx199815.@tcp(127.0.0.1:3306)/niuNiuSDK?charset=utf8mb4&parseTime=true&loc=Local
   showSql: true
   showExecTime: false
   maxIdle: 10
   maxOpen: 200
-qiniu_service:
-  access_key:
-  secret_key:
-  rtc_app_id:
-whiteboard:
-  ak: 123
+log:
+  path: ./run/niuNiuWhiteBoard
+  level: debug
+redisConfig:
+  name: redis
+  type: tcp
+  address: 127.0.0.1:6379
+  auth:
 
 
 

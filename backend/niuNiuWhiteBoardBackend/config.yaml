@@ -20,10 +20,10 @@ dbConfig:
   showExecTime: false
   maxIdle: 10
   maxOpen: 200
-qiniu_service:
-  access_key:
-  secret_key:
-  rtc_app_id:
+qiniuService:
+  accessKey: UKxFwgBIB-2XNAb3gRZiicO09ZrlZqGTn3wfho_x
+  secretKey: IwHAY5Wkkd42i8JTBQ7BFjx9CpTyAXst5x0ImTqF
+  rtcAppId: gqo29t6e5
 whiteboard:
   ak: 123
 

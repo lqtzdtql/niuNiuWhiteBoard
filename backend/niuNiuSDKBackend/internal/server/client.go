@@ -10,6 +10,7 @@ import (
 type Client struct {
 	Conn          *websocket.Conn //一个账号，一个连接
 	UUID          string
+	RoomUUID      string
 	Send          chan []byte
 	HeartbeatTime int64 // 前一次心跳时间
 }
@@ -21,7 +22,6 @@ func (c *Client) Read() {
 	}()
 
 	for {
-		c.Conn.PongHandler()
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
 			log.Logger.Error("client read message error", log.Any("client read message error", err.Error()))
