@@ -22,9 +22,11 @@ import { IRoom } from '@Src/service/home/IHomeService';
 import { IUserInfo } from '@Src/service/login/ILoginService';
 import { exitRoom } from '@Src/service/room/RoomService';
 import { List, Popover, Switch } from 'antd';
-import QNRTC, { QNMicrophoneAudioTrack, QNRemoteTrack, QNRTCClient } from 'qnweb-rtc';
+import { runInAction } from 'mobx';
+import QNRTC, { QNMicrophoneAudioTrack, QNRemoteAudioTrack, QNRemoteTrack, QNRemoteVideoTrack } from 'qnweb-rtc';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Stream } from './stream';
 import './style/Room.less';
 import WhiteBoard from './WhiteBoard';
 
@@ -34,6 +36,9 @@ const Room = () => {
   const userInfo: IUserInfo = JSON.parse(localStorage.getItem('userInfo') || '');
   // 创建QNRTCClient对象
   const client = QNRTC.createClient();
+  const streams: Stream[] = [];
+  const localStream: Stream = new Stream();
+
   let localTracks: QNMicrophoneAudioTrack[] = [];
 
   const [openMicrophone, setOpenMicrophone] = useState(true);
@@ -50,23 +55,107 @@ const Room = () => {
     joinChat();
   }, []);
 
+  client.on('user-left', (remoteUserID: string) => {
+    runInAction(() => {
+      const index = streams.findIndex((item) => item.user_id === remoteUserID);
+      streams.splice(index, 1);
+    });
+  });
+
+  // 订阅远端音视频
+  client.on('user-published', async (userID: string, qntrack: (QNRemoteAudioTrack | QNRemoteVideoTrack)[]) => {
+    runInAction(async () => {
+      const { audioTracks } = await client.subscribe(qntrack);
+
+      audioTracks.forEach((track) => {
+        let stream = streams.find((item) => item.user_id === userID && item.tag === track.tag);
+        if (stream === undefined) {
+          stream = new Stream();
+          stream.user_id = userID;
+          stream.tag = track.tag || 'mc';
+          streams.push(stream);
+        }
+        stream.audioTrack = track;
+      });
+
+      muteStateChanged([...audioTracks]);
+    });
+  });
+
+  // ----------------------------------------------------------------
+
+  // 远端音视频取消发布
+  client.on('user-unpublished', async (userID: string, qntrack: (QNRemoteAudioTrack | QNRemoteVideoTrack)[]) => {
+    runInAction(async () => {
+      qntrack.forEach((track) => {
+        const index = streams.findIndex((item) => item.user_id === userID && item.tag === track.tag);
+        if (index >= 0) {
+          const stream = streams[index];
+          if (track.isAudio()) {
+            stream.audioTrack = undefined;
+          }
+
+          if (stream.audioTrack === undefined) {
+            streams.splice(index, 1);
+          }
+        }
+      });
+    });
+  });
+
   async function joinChat() {
     const response = await getChatRoomToken(roomInfo.uuid);
     joinChatRoom(response.token);
   }
 
   async function joinChatRoom(roomToken: string) {
-    // 需要先监听对应事件再加入房间
-    autoSubscribe(client);
-    // 这里替换成刚刚生成的 RoomToken
+    // // 需要先监听对应事件再加入房间
+    // autoSubscribe(client);
+    // // 这里替换成刚刚生成的 RoomToken
+    // await client.join(roomToken);
+    // console.log('joinRoom success!');
+    // await publish(client);
+
     await client.join(roomToken);
-    console.log('joinRoom success!');
-    await publish(client);
+
+    const audioConfig = { tag: 'mc' };
+    const localTracks = await QNRTC.createMicrophoneAudioTrack(audioConfig);
+    console.log('my local tracks', localTracks);
+
+    localStream.user_id = client.userID;
+    localStream.isLocal = true;
+    localStream.tag = 'mc';
+    localStream.audioTrack = localTracks;
+
+    await client.publish(localTracks);
+    console.log('publish success! client.userID: ', client.userID);
+
+    streams.push(localStream);
+
+    // ----------------------------------------------------------------
+
+    subscribeRemoteUser();
   }
+  // 远程用户更新静音状态
+  const muteStateChanged = (tracks: QNRemoteTrack[]) => {
+    tracks.forEach((track) => {
+      (function (track, streams) {
+        track.on('mute-state-changed', (isMuted: boolean) => {
+          runInAction(async () => {
+            const stream = streams.find((item: Stream) => item.user_id === track.userID && item.tag === track.tag);
+            if (stream === undefined) {
+              return;
+            }
+            if (track.isAudio()) stream.audioMuted = isMuted;
+          });
+        });
+      })(track, streams);
+    });
+  };
 
   const quitRoom = async () => {
     console.log(roomInfo);
-    client.leave().then(() => {
+    await client.leave().then(() => {
       for (const track of localTracks) {
         track.destroy();
       }
@@ -86,41 +175,31 @@ const Room = () => {
     setOpenMicrophone(!openMicrophone);
   };
 
-  // 这里的参数 client 是指刚刚初始化的 QNRTCClient 对象
-  async function subscribe(client: QNRTCClient, tracks: QNRemoteTrack | QNRemoteTrack[]) {
-    // 传入 Track 对象数组调用订阅方法发起订阅，异步返回成功订阅的 Track 对象。
-    const remoteTracks = await client.subscribe(tracks);
-    // 选择页面上的一个元素作为父元素，播放远端的音视频轨
-    const remoteElement = document.getElementById('player');
-    // 遍历返回的远端 Track，调用 play 方法完成在页面上的播放
-    if (remoteElement && openHear) {
-      for (const remoteTrack of [...remoteTracks.audioTracks]) {
-        remoteTrack.play(remoteElement);
-      }
-    }
-  }
+  const subscribeRemoteUser = () => {
+    client.remoteUsers.forEach(async (user) => {
+      const { audioTracks } = await client.subscribe([...user.getAudioTracks()]);
 
-  function autoSubscribe(client: QNRTCClient) {
-    // 添加事件监听，当房间中出现新的 Track 时就会触发，参数是 trackInfo 列表
-    client.on('user-published', (userId: any, tracks: QNRemoteTrack | QNRemoteTrack[]) => {
-      console.log('user-published!', userId, tracks);
-      subscribe(client, tracks)
-        .then(() => console.log('subscribe success!'))
-        .catch((e) => console.error('subscribe error', e));
+      const mcStream = new Stream();
+      const screenStream = new Stream();
+
+      audioTracks.forEach((track) => {
+        if (track.tag === 'mc') mcStream.audioTrack = track;
+        if (track.tag === 'screen') screenStream.audioTrack = track;
+      });
+
+      if (mcStream.audioTrack !== undefined) {
+        mcStream.user_id = user.userID;
+        streams.push(mcStream);
+      }
+
+      if (screenStream.audioTrack !== undefined) {
+        screenStream.user_id = user.userID;
+        streams.push(screenStream);
+      }
+
+      muteStateChanged([...audioTracks]);
     });
-    // 就是这样，就像监听 DOM 事件一样通过 on 方法监听相应的事件并给出处理函数即可
-  }
-  async function publish(client: QNRTCClient) {
-    // 同时采集麦克风音频和摄像头视频轨道。
-    // 这个函数会返回一组audio track 与 video track
-    const localTracks = await QNRTC.createMicrophoneAudioTrack();
-    console.log('my local tracks', localTracks);
-    // 将刚刚的 Track 列表发布到房间中
-    if (openMicrophone) {
-      await client.publish(localTracks);
-      console.log('publish success!');
-    }
-  }
+  };
 
   const Title: React.FC = () => {
     return (
