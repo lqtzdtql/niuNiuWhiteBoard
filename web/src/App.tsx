@@ -1,6 +1,5 @@
 // @ts-nocheck
 import React, { useEffect, useRef } from 'react';
-import { FabricObjects } from '../sdk/index';
 import { Canvas } from '../sdk/Canvas';
 
 function App() {

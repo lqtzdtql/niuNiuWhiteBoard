@@ -109,7 +109,7 @@ const Home: React.FC = () => {
   };
 
   const enterRoom = (item: IRoom) => {
-    navigate(`/room`, { state: [item] });
+    navigate(`/room`, { state: item });
   };
 
   const signout = async () => {

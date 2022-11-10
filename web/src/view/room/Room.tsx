@@ -14,33 +14,48 @@ import arrow from '@Public/static/img/箭头.png';
 import page from '@Public/static/img/纸张.png';
 import quit from '@Public/static/img/退出.png';
 import { typeMap } from '@Src/constants/Constants';
+import { IRoom } from '@Src/service/home/IHomeService';
+import { IUserInfo } from '@Src/service/login/ILoginService';
+import { exitRoom } from '@Src/service/room/RoomService';
 import { List, Popover, Switch } from 'antd';
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './style/Room.less';
 import WhiteBoard from './WhiteBoard';
 
 const Room = () => {
   const location = useLocation();
-  const [roomInfo, userInfo] = location.state;
-  console.log(roomInfo, userInfo);
+  const roomInfo = location.state as IRoom;
+  const userInfo: IUserInfo = JSON.parse(localStorage.getItem('userInfo') || '');
 
+  console.log(roomInfo);
+
+  const navigate = useNavigate();
   const [index, setIndex] = useState(1);
   const data = [1, 2, 3, 4];
   const BoardList = () => {
     return <List size="small" dataSource={data} renderItem={(item: number) => <List.Item>页面{item}</List.Item>} />;
   };
 
+  const quitRoom = async () => {
+    console.log(roomInfo);
+
+    const response = await exitRoom(roomInfo.uuid);
+    if (response.code === 200) {
+      navigate('/home');
+    }
+  };
+
   const Title: React.FC = () => {
     return (
       <div className="title">
-        <img src={quit} />
+        <img src={quit} onClick={quitRoom} />
         <h3 className="room-name">
           {typeMap.get(roomInfo.type)}:{roomInfo.name}的页面{index}
         </h3>
         <Switch checkedChildren="协作模式" unCheckedChildren="只读模式" defaultChecked />
 
-        <Popover content={<div>Content</div>} title={`主持人:${roomInfo.host_id}`} trigger="click" placement="bottom">
+        <Popover content={<div>Content</div>} title={`主持人:${roomInfo.host_name}`} trigger="click" placement="bottom">
           <img className="room-title-item" src={friends} />
         </Popover>
         <img className="room-title-item" src={download} />
