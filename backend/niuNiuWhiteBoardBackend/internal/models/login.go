@@ -41,11 +41,6 @@ type Mobile struct {
 	Mobile string `form:"mobile" json:"mobile" binding:"required"`
 }
 
-type CustomClaims struct {
-	UserId int64
-	jwt.StandardClaims
-}
-
 // 手机 + 密码登录
 func Login(c *gin.Context) {
 	db := c.MustGet("db").(*xorm.Engine)
@@ -197,16 +192,6 @@ func Info(c *gin.Context) {
 
 func DoLogin(c *gin.Context, user User) error {
 	if conf.Cfg.OpenJwt { //返回jwt
-		customClaims := &CustomClaims{
-			UserId: user.ID,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(time.Duration(MAXAGE) * time.Second).Unix(), // 过期时间，必须设置
-			},
-		}
-		accessToken, err := customClaims.MakeToken()
-		if err != nil {
-			return err
-		}
 		refreshClaims := &CustomClaims{
 			UserId: user.ID,
 			StandardClaims: jwt.StandardClaims{
@@ -217,8 +202,7 @@ func DoLogin(c *gin.Context, user User) error {
 		if err != nil {
 			return err
 		}
-		c.Header(ACCESS_TOKEN, accessToken)
-		c.Header(REFRESH_TOKEN, refreshToken)
+		c.Writer.Header().Set(REFRESH_TOKEN, refreshToken)
 	}
 	return nil
 }

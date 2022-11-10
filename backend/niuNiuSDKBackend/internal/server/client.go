@@ -4,12 +4,14 @@ import (
 	"github.com/gorilla/websocket"
 	"niuNiuSDKBackend/common/log"
 	"niuNiuSDKBackend/internal/models"
+	"time"
 )
 
 type Client struct {
-	Conn *websocket.Conn
-	Name string
-	Send chan []byte
+	Conn          *websocket.Conn //一个账号，一个连接
+	UUID          string
+	Send          chan []byte
+	HeartbeatTime int64 // 前一次心跳时间
 }
 
 func (c *Client) Read() {
@@ -32,6 +34,7 @@ func (c *Client) Read() {
 
 		// pong
 		if msg.ContentType == models.HEAT_BEAT {
+			c.HeartbeatTime = time.Now().Unix()
 			pong := &models.Message{
 				Content:     models.PONG,
 				ContentType: models.HEAT_BEAT,

@@ -19,6 +19,7 @@ const cursorMap = {
   mb: 's-resize',
 };
 export class Canvas extends EventCenter {
+  public canvasId: string;
   /** 画布宽度 */
   public width: number;
   /** 画布高度 */
@@ -50,11 +51,12 @@ export class Canvas extends EventCenter {
   public hoverCursor: string = 'move';
   public moveCursor: string = 'move';
   public rotationCursor: string = 'crosshair';
-  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮 */
+  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮9文字10自由线条 */
   public brush: {} = { type: 0 };
   public start: Pos = {};
   public end: Pos = {};
   public temp: Pos = {};
+  public penPath: Pos[] = [];
 
   public viewportTransform: number[] = [1, 0, 0, 1, 0, 0];
   public vptCoords: {};
@@ -71,6 +73,8 @@ export class Canvas extends EventCenter {
   /** 当前选中的组 */
   public _activeGroup: Group;
   public canvasId: string = '';
+  public modifiedList: [] = [];
+  public modifiedAgainList: [] = [];
 
   /** 画布中所有添加的物体 */
   private _objects: FabricObject[];
@@ -196,6 +200,16 @@ export class Canvas extends EventCenter {
     Util.addListener(window, 'resize', this._onResize);
     Util.addListener(this.upperCanvasEl, 'mousedown', this._onMouseDown);
     Util.addListener(this.upperCanvasEl, 'mousemove', this._onMouseMove);
+    this.on('object:added', () => {
+      while (this.modifiedAgainList.length) {
+        this.modifiedAgainList.pop();
+      }
+    });
+    this.on('object:modified', () => {
+      while (this.modifiedAgainList.length) {
+        this.modifiedAgainList.pop();
+      }
+    });
   }
   _onMouseDown(e: MouseEvent) {
     this.__onMouseDown(e);
@@ -242,6 +256,7 @@ export class Canvas extends EventCenter {
         this.deactivateAllWithDispatch();
         // this.renderAll();
       } else {
+        if (!target.visible || target.isLocked) return;
         // 如果是点选操作，接下来就要为各种变换做准备
         target.saveState();
 
@@ -273,7 +288,7 @@ export class Canvas extends EventCenter {
       this.emit('mouse:down', { target, e });
       target && target.emit('mousedown', { e });
       // if (corner === 'mtr') {
-      //     // 如果点击的是上方的控制点，也就是旋转操作，我们需要临时改一下变换中心，因为我们一直就是以 center 为中心，所以可以先不管
+      // 如果点击的是上方的控制点，也就是旋转操作，我们需要临时改一下变换中心，因为我们一直就是以 center 为中心，所以可以先不管
       //     this._previousOriginX = this._currentTransform.target.originX;
       //     this._currentTransform.target.adjustPosition('center');
       //     this._currentTransform.left = this._currentTransform.target.left;
@@ -281,19 +296,19 @@ export class Canvas extends EventCenter {
       // }
     } else if (this.brush.type === 8) {
       let target = this.findTarget(e);
-      console.log(target);
       if (target) {
         this.delete(target.objectId);
       } else {
-        if (this._activeObject) {
-          // 如果当前有激活物体
-          this._activeObject.setActive(false);
-          this.renderAll();
-        }
+        this.discardActiveObject();
+        this.renderAll();
       }
+    } else if (this.brush.type === 10) {
+      this.discardActiveObject();
+      this.renderAll();
+      this.penPath.push(this.getPointer(e, this.upperCanvasEl));
     } else {
-      this.clearContext(this.contextTop);
-      this.deactivateAllWithDispatch();
+      this.discardActiveObject();
+      this.renderAll();
       this.start = this.getPointer(e, this.upperCanvasEl);
     }
   }
@@ -317,7 +332,7 @@ export class Canvas extends EventCenter {
         // 如果是 hover 事件，这里我们只需要改变鼠标样式，并不会重新渲染
         let style = this.upperCanvasEl.style;
         target = this.findTarget(e);
-
+        if (target && !target.visible) return;
         if (target) {
           this._setCursorFromEvent(e, target);
         } else {
@@ -416,7 +431,10 @@ export class Canvas extends EventCenter {
 
       this.emit('mouse:move', { target, e });
       target && target.emit('mousemove', { e });
-    } else if (this.brush.type !== 8) {
+    } else if (this.brush.type === 10 && this.penPath.length) {
+      this.penPath.push(this.getPointer(e, this.upperCanvasEl));
+      this.renderTop();
+    } else if (this.brush.type !== 8 && this.brush.type !== 9) {
       this.temp = this.getPointer(e, this.upperCanvasEl);
       this.renderTop();
     }
@@ -514,7 +532,13 @@ export class Canvas extends EventCenter {
         '_drawArrow',
       ];
       this.end = this.getPointer(e, this.upperCanvasEl);
-      this[_drawFunctionList[this.brush.type]](2, this.start, this.end);
+      if (this.brush.type === 9) {
+        this._drawText(this.start);
+      } else if (this.brush.type === 10) {
+        this._drawPenPath(this.penPath, 2);
+      } else {
+        this[_drawFunctionList[this.brush.type]](this.start, this.end, 2);
+      }
       this.start = {};
     }
     console.log('1111111111', this._objects);
@@ -714,6 +738,7 @@ export class Canvas extends EventCenter {
 
     for (let i = 0, len = this._objects.length; i < len; ++i) {
       let currentObject = this._objects[i];
+      if (!currentObject.visible) continue;
 
       if (!currentObject) continue;
 
@@ -764,7 +789,11 @@ export class Canvas extends EventCenter {
       '_drawRound',
       '_drawArrow',
     ];
-    if (this.brush.type !== 0) this[_drawFunctionList[this.brush.type]](1, this.start, this.temp);
+    if (this.brush.type === 10) {
+      this._drawPenPath(this.penPath, 1);
+    } else if (this.brush.type !== 0) {
+      this[_drawFunctionList[this.brush.type]](this.start, this.temp, 1);
+    }
 
     // 如果有选中物体
     // let activeGroup = this.getActiveGroup();
@@ -774,7 +803,7 @@ export class Canvas extends EventCenter {
     return this;
   }
 
-  _drawLine(lab, start, end) {
+  _drawLine(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -791,11 +820,22 @@ export class Canvas extends EventCenter {
         stroke: this.brush.stroke,
         strokeWidth: this.strokeWidth || 1,
       });
+      line.on('added', () => {
+        console.log('直线被添加了');
+        this.modifiedList.push([line.objectId, { ...line.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      line.on('modified', () => {
+        console.log('直线被修改了');
+        console.log(line);
+        this.modifiedList.push([line.objectId, { ...line.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(line);
     }
   }
 
-  _drawRect(lab, start, end) {
+  _drawRect(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -821,11 +861,21 @@ export class Canvas extends EventCenter {
         top: start.y + (end.y - start.y) / 2,
         fill: 'red',
       });
+      rect.on('added', () => {
+        console.log('rect被添加了');
+        this.modifiedList.push([rect.objectId, { ...rect.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      rect.on('modified', () => {
+        console.log('rect被修改了');
+        this.modifiedList.push([rect.objectId, { ...rect.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(rect);
     }
   }
 
-  _drawDiamond(lab, start, end) {
+  _drawDiamond(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -850,11 +900,21 @@ export class Canvas extends EventCenter {
         top: start.y,
         fill: 'red',
       });
+      diamond.on('added', () => {
+        console.log('diamond被添加了');
+        this.modifiedList.push([diamond.objectId, { ...diamond.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      diamond.on('modified', () => {
+        console.log('diamond被修改了');
+        this.modifiedList.push([diamond.objectId, { ...diamond.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(diamond);
     }
   }
 
-  _drawTriangle(lab, start, end) {
+  _drawTriangle(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -878,11 +938,21 @@ export class Canvas extends EventCenter {
         top: start.y - Math.abs(end.x - start.x) / 2,
         fill: 'red',
       });
+      triangle.on('added', () => {
+        console.log('triangle被添加了');
+        this.modifiedList.push([triangle.objectId, { ...triangle.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      triangle.on('modified', () => {
+        console.log('triangle被修改了');
+        this.modifiedList.push([triangle.objectId, { ...triangle.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(triangle);
     }
   }
 
-  _drawRound(lab, start, end) {
+  _drawRound(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -911,11 +981,21 @@ export class Canvas extends EventCenter {
         roundAngle: 360,
         fill: 'green',
       });
+      round.on('added', () => {
+        console.log('round被添加了');
+        this.modifiedList.push([round.objectId, { ...round.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      round.on('modified', () => {
+        console.log('round被修改了');
+        this.modifiedList.push([round.objectId, { ...round.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(round);
     }
   }
 
-  _drawArrow(lab, start, end) {
+  _drawArrow(start, end, lab) {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
@@ -945,9 +1025,140 @@ export class Canvas extends EventCenter {
         direction: end.x - start.x,
         headlen: this.brush.headlen || 15,
       });
+      arrow.on('added', () => {
+        console.log('arrow被添加了');
+        this.modifiedList.push([arrow.objectId, { ...arrow.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      arrow.on('modified', () => {
+        console.log('arrow被修改了');
+        this.modifiedList.push([arrow.objectId, { ...arrow.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
       this.add(arrow);
     }
   }
+  _drawText(target) {
+    const text = new FabricObjects.Text({
+      left: target.x,
+      top: target.y,
+      size: 20,
+      text: this.brush.text,
+    });
+    text.on('added', () => {
+      console.log('text被添加了');
+      this.modifiedList.push([text.objectId, { ...text.originalState }, 'added']);
+      console.log('modifiedList', this.modifiedList);
+    });
+    text.on('modified', () => {
+      console.log('text被修改了');
+      this.modifiedList.push([text.objectId, { ...text.originalState }, 'modified']);
+      console.log('modifiedList', this.modifiedList);
+    });
+    this.add(text);
+  }
+  _drawPenPath(penPathList, lab) {
+    let maxx = Number.MIN_SAFE_INTEGER,
+      maxy = Number.MIN_SAFE_INTEGER,
+      minx = Number.MAX_SAFE_INTEGER,
+      miny = Number.MAX_SAFE_INTEGER;
+    for (const i of penPathList) {
+      maxx = Math.max(maxx, i.x);
+      maxy = Math.max(maxy, i.y);
+      minx = Math.min(minx, i.x);
+      miny = Math.min(miny, i.y);
+    }
+    if (lab === 1) {
+      this.contextTop.lineWidth = this.brush.strokeWidth;
+      this.contextTop.strokeStyle = this.brush.stroke;
+      for (let i = 1; i < this.penPath.length; i++) {
+        this.contextTop.beginPath();
+        this.contextTop.moveTo(this.penPath[i - 1].x, this.penPath[i - 1].y);
+        this.contextTop.lineTo(this.penPath[i].x, this.penPath[i].y);
+        this.contextTop.closePath();
+        this.contextTop.stroke();
+      }
+    } else {
+      const penPath = new FabricObjects.Pen({
+        left: (maxx + minx) / 2,
+        top: (maxy + miny) / 2,
+        width: maxx - minx,
+        height: maxy - miny,
+        penPath: penPathList,
+      });
+      penPath.on('added', () => {
+        console.log('penPath被添加了');
+        this.modifiedList.push([penPath.objectId, { ...penPath.originalState }, 'added']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      penPath.on('modified', () => {
+        console.log('penPath被修改了');
+        this.modifiedList.push([penPath.objectId, { ...penPath.originalState }, 'modified']);
+        console.log('modifiedList', this.modifiedList);
+      });
+      this.add(penPath);
+      this.penPath = [];
+    }
+  }
+
+  revoke() {
+    this.modifyBrush({ type: 0 });
+    if (this.modifiedList.length) {
+      const temp = this.modifiedList.pop();
+      for (const i of this._objects) {
+        if (i.objectId === temp[0]) {
+          if (i.lock) {
+            this.modifiedList.push(temp);
+            return;
+          }
+          if (temp[2] === 'modified') {
+            i.saveState();
+            this.modifiedAgainList.push([temp[0], { ...i.originalState }, temp[2]]);
+            for (const k in temp[1]) {
+              i[k] = temp[1][k];
+            }
+          } else {
+            this.modifiedAgainList.push(temp);
+            i.visible = false;
+          }
+
+          i.emit('object:modified', { target: i });
+          break;
+        }
+      }
+      this.renderAll();
+    }
+  }
+
+  redo() {
+    console.log(this.modifiedAgainList);
+    this.modifyBrush({ type: 0 });
+    if (this.modifiedAgainList.length) {
+      const temp = this.modifiedAgainList.pop();
+      for (const i of this._objects) {
+        if (i.objectId === temp[0]) {
+          if (i.lock) {
+            this.modifiedAgainList.push(temp);
+            return;
+          }
+          if (temp[2] === 'modified') {
+            i.saveState();
+            this.modifiedList.push([temp[0], { ...i.originalState }, temp[2]]);
+            for (const k in temp[1]) {
+              i[k] = temp[1][k];
+            }
+          } else {
+            this.modifiedList.push(temp);
+            i.visible = true;
+          }
+          i.emit('object:modified', { target: i });
+          break;
+        }
+      }
+      this.renderAll();
+    }
+  }
+
   /** 绘制框选区域 */
   _drawSelection() {
     let ctx = this.contextTop,
@@ -972,10 +1183,12 @@ export class Canvas extends EventCenter {
     );
   }
   setActiveObject(object: FabricObject, e: MouseEvent): Canvas {
+    if (object.isLocked) return;
     if (this._activeObject) {
       // 如果当前有激活物体
-      this._activeObject.setActive(false);
+      this.discardActiveObject();
     }
+    object.emit('lock');
     this._activeObject = object;
     object.setActive(true);
 
@@ -1108,6 +1321,7 @@ export class Canvas extends EventCenter {
   discardActiveObject() {
     if (this._activeObject) {
       this._activeObject.setActive(false);
+      this._activeObject.emit('unlock');
     }
     this._activeObject = null;
     return this;
