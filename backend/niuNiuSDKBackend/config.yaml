@@ -9,10 +9,10 @@ log:
   path: ./run/niuNiuWhiteBoard
   level: debug
 redisConfig:
-  name: redis
-  type: tcp
-  address: 127.0.0.1:6379
-  auth:
+  addr: localhost:6379
+  password:
+  dB: 0
+  poolSize: 20
 
 
 

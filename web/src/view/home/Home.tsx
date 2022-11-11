@@ -90,26 +90,6 @@ const Home: React.FC = () => {
         description: response.message,
       });
     }
-    // setData([
-    //   { uuid: '123', name: 'abc', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: '123', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'we', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'wfe', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'sc', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'gwe', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'csa', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'wef', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'gwee', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'vs', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'yh', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'rj', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'jyt', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'trhy', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'yth', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: '65j', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'trj', type: 'teaching_room', host_id: 1 },
-    //   { uuid: '123', name: 'rtj', type: 'teaching_room', host_id: 1 },
-    // ]);
   };
 
   const enterRoom = async (item: IRoom) => {

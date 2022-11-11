@@ -22,10 +22,10 @@ type DbConfig struct {
 }
 
 type RedisConfig struct {
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Address string `json:"address"`
-	Auth    string `json:"auth"`
+	Addr     string `json:"addr"`
+	Password string `json:"password"`
+	DB       int    `json:"dB"`       // 数据库
+	PoolSize int    `json:"poolSize"` // 连接池大小
 }
 
 // 日志保存地址
