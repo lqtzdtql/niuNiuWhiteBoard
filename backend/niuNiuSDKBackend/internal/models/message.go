@@ -64,6 +64,11 @@ type ObjectRes struct {
 	Content      string `json:"content"`
 }
 
+type ObjectInRedis struct {
+	Content   string `json:"content"`
+	Timestamp int64  `json:"timestamp"`
+}
+
 // DRAWING_LOCK
 type DrawingLockRes struct {
 	ContentType  int32  `json:"contentType"`
@@ -78,15 +83,8 @@ type CreateBoardRes struct {
 	Content     string `json:"content"`
 }
 
-// CAN_LOCK
-type CanLockRes struct {
-	ContentType  int32  `json:"contentType"`
-	ObjectId     string `json:"objectId"`
-	ToWhiteBoard string `json:"toWhiteBoard"`
-}
-
 // LEAVE_ROOM
 type LeaveRoomRes struct {
 	ContentType int32  `json:"contentType"`
-	Content     string `json:"content"`
+	LeaveUser   string `json:"leaveUser"`
 }

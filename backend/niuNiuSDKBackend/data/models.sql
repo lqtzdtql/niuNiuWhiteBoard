@@ -14,6 +14,7 @@ CREATE TABLE `whiteboards` (
   `id` bigint(20) UNSIGNED NOT NULL COMMENT '主键',
   `uuid` varchar(128) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT'白板uuid',
   `name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '白板名',
+  `room_uuid` varchar(128) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT'白板所在房间',
   `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '白板创建时间',
   `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '白板修改时间',
   `deleted_time` datetime DEFAULT NULL COMMENT '白板删除时间'

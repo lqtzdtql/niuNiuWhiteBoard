@@ -20,12 +20,9 @@ func NewRouter() *gin.Engine {
 	server.Use(Cors())
 	server.Use(gin.Recovery())
 
-	socket := RunSocket
 	server.GET("/getsk", secretkey.NewSk)
-	group := server.Group("", Auth)
-	{
-		group.GET("/websocket", socket)
-	}
+	server.GET("/auth", Auth)
+	server.GET("/websocket", RunSocket)
 	return server
 }
 
