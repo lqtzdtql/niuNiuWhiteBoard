@@ -76,6 +76,7 @@ export class Canvas extends EventCenter {
   public modifiedAgainList: [] = [];
   public bindRoomId: string;
   public onlyRead: boolean;
+  public userId: string;
 
   /** 画布中所有添加的物体 */
   public _objects: FabricObject[];
@@ -89,7 +90,7 @@ export class Canvas extends EventCenter {
   // private _previousOriginX;
   private _previousPointer: Pos;
 
-  constructor(el: HTMLCanvasElement, options) {
+  constructor(el: HTMLCanvasElement, options?) {
     super();
     // 初始化下层画布 lower-canvas
     this._initStatic(el, options);
@@ -101,7 +102,7 @@ export class Canvas extends EventCenter {
     this._initRetinaScaling();
   }
   /** 初始化 _objects、lower-canvas 宽高、options 赋值 */
-  _initStatic(el: HTMLCanvasElement, options) {
+  _initStatic(el: HTMLCanvasElement, options?) {
     this._objects = [];
 
     this._createLowerCanvas(el);
@@ -109,7 +110,7 @@ export class Canvas extends EventCenter {
 
     this.calcOffset();
   }
-  _initOptions(options) {
+  _initOptions(options?) {
     for (let prop in options) {
       this[prop] = options[prop];
     }
@@ -1650,7 +1651,7 @@ export class Canvas extends EventCenter {
     obj.setupState();
     obj.setCoords();
     obj.canvas = this;
-    obj.objectId = new Date().valueOf();
+    obj.objectId = this.userId + new Date().valueOf();
     if (isFirst) {
       this.emit('object:added', { target: obj });
       obj.emit('added');

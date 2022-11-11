@@ -20,15 +20,16 @@ export class Room extends EventCenter {
   public timeoutObj: any = null;
   public serverTimeoutObj: any = null;
   public reConnectObj: any = null;
+  public el: HTMLCanvasElement;
 
   constructor(options: optionsType) {
     super();
     this.roomId = options.roomId;
     this.userId = options.userId;
     this.onlyRead = options.onlyRead || false;
+    this.el = options.el;
     this.initWS();
     this.initBindRoomEvent();
-    this.createCanvas(options.el, options?.elOptions);
   }
 
   initWS() {
@@ -80,6 +81,7 @@ export class Room extends EventCenter {
       } else if (res.contentType === 8) {
         const canvasId = JSON.parse(res.content).canvasId;
         this.emit('createCanvas', { canvasId });
+        this.emit('new', { canvasId });
       } else if (res.contentType === 9) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
           const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
@@ -90,7 +92,6 @@ export class Room extends EventCenter {
               } else {
                 i.off('canLock');
               }
-
               break;
             }
           }
@@ -98,8 +99,22 @@ export class Room extends EventCenter {
       } else if (res.contentType === 10) {
         const leaveUserId = res.leaveUser;
         this.emit('leaveRoom', { leaveUserId });
+      } else if (res.contentType === 11) {
+        const canvasIds = JSON.parse(res.content).canvasIds;
+        for (const i of canvasIds) {
+          if (!this.canvasMap.has(i)) {
+            this.emit('createCanvas', { canvasId: i });
+          }
+        }
       }
     });
+    this.ws.send(
+      JSON.stringify({
+        from: this.userId,
+        toRoom: this.roomId,
+        contentType: 11,
+      }),
+    );
   }
 
   initBindRoomEvent() {
@@ -116,6 +131,14 @@ export class Room extends EventCenter {
         const canvas = this.canvasMap.get(options.canvasId) as Canvas;
         canvas.emit('update', { objects: options.objects });
       }
+    });
+    this.on('createCanvas', (param: { canvasId: string }) => {
+      const canvas = new Canvas(this.el);
+      canvas.canvasId = param.canvasId;
+      canvas.onlyRead = this.onlyRead;
+      canvas.userId = this.userId;
+      this.initBindCanvasEvent(canvas);
+      this.canvasMap.set(param.canvasId, canvas);
     });
   }
 
@@ -137,23 +160,8 @@ export class Room extends EventCenter {
     }
   }
 
-  createCanvas(el: HTMLCanvasElement, options?: {}) {
+  createCanvas() {
     this.ws.send(JSON.stringify({ from: this.userId, toRoom: this.roomId, contentType: 8 }));
-    this.on('createCanvas', (param: { canvasId: string }) => {
-      const canvas = new Canvas(el, options);
-      canvas.canvasId = param.canvasId;
-      canvas.onlyRead = this.onlyRead;
-      this.initBindCanvasEvent(canvas);
-      this.canvasMap.set(param.canvasId, canvas);
-      if (this.currentCanvasId) {
-        const temp = this.canvasMap.get(this.currentCanvasId) as Canvas;
-        temp.clearContext(temp.contextContainer);
-        temp.clearContext(temp.contextTop);
-      }
-      this.currentCanvasId = param.canvasId;
-      this.off('createCanvas');
-      return param.canvasId;
-    });
   }
 
   initBindCanvasEvent(canvas: Canvas) {
@@ -310,13 +318,19 @@ export class Room extends EventCenter {
       if (activeObject) {
         temp.discardActiveObject();
       }
-      const objects = temp._objects;
+      const objects = temp._objects.map((i) => {
+        i.active = false;
+        i.isLocked = false;
+      });
       return btoa(JSON.stringify(objects));
     }
   }
 
   importCanvas(canvasId: string, canvasData: string) {
-    const objects = JSON.parse(atob(canvasData)).objects as FabricObject[];
+    const objects = JSON.parse(atob(canvasData)).objects.map((v: FabricObject, i: number) => {
+      v.timestamp = new Date().valueOf();
+      v.objectId = this.userId + new Date().valueOf() + i;
+    }) as FabricObject[];
     if (this.canvasMap.has(canvasId)) {
       const canvas = this.canvasMap.get(canvasId) as Canvas;
       canvas.add(true, objects);
