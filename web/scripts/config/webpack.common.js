@@ -48,9 +48,11 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.json'],
     alias: {
+      '@Public': resolve(PROJECT_PATH, './public'),
       '@Src': resolve(PROJECT_PATH, './src'),
       '@Components': resolve(PROJECT_PATH, './src/components'),
       '@Utils': resolve(PROJECT_PATH, './src/utils'),
+      '@Sdk': resolve(PROJECT_PATH, './sdk'),
     },
   },
   plugins: [
@@ -126,6 +128,15 @@ module.exports = {
             loader: 'less-loader',
             options: {
               sourceMap: isDev,
+              lessOptions: {
+                // 如果使用less-loader@5，请移除 lessOptions 这一级直接配置选项。
+                modifyVars: {
+                  'layout-header-background': '#B3E5FC',
+                  'layout-header-padding': 0,
+                  'layout-header-height': 'auto',
+                },
+                javascriptEnabled: true,
+              },
             },
           },
         ],

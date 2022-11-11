@@ -13,8 +13,4 @@ async function logout(): Promise<IBaseResponse> {
   return fetchRes('get', '/v1/logout', {});
 }
 
-async function getChatRoomToken(uuid: string) {
-  return fetchRes('get', `/v1/rooms/${uuid}/rtc`, {});
-}
-
-export { create, roomList, logout, getChatRoomToken };
+export { create, roomList, logout };
