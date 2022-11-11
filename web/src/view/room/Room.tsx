@@ -16,10 +16,6 @@ const Room = () => {
 
   let room: SDKRoom;
 
-  // const BoardList = () => {
-  //   return <List size="small" dataSource={data} renderItem={(item: number) => <List.Item>页面{item}</List.Item>} />;
-  // };
-
   useEffect(() => {
     joinWhiteBoard(roomInfo.uuid);
   }, []);
@@ -38,7 +34,7 @@ const Room = () => {
       <Title roomInfo={roomInfo} userInfo={userInfo} />
       <div className="room-main">
         <Sider />
-        <canvas className="room-content" />
+        <canvas id="whiteboard" className="room-content" />
       </div>
     </div>
   );

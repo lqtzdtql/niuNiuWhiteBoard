@@ -1,7 +1,5 @@
 import download from '@Public/static/img/下载.png';
 import share from '@Public/static/img/分享.png';
-import hear from '@Public/static/img/声音.png';
-import muteHear from '@Public/static/img/声音关闭.png';
 import friends from '@Public/static/img/好友.png';
 import newPage from '@Public/static/img/新建页面.png';
 import page from '@Public/static/img/纸张.png';
@@ -14,7 +12,15 @@ import { IUserInfo } from '@Src/service/login/ILoginService';
 import { exitRoom, getChatRoomToken } from '@Src/service/room/RoomService';
 import { List, Popover, Switch } from 'antd';
 import { runInAction } from 'mobx';
-import QNRTC, { QNMicrophoneAudioTrack, QNRemoteAudioTrack, QNRemoteTrack, QNRTCClient } from 'qnweb-rtc';
+import QNRTC, {
+  QNConnectionDisconnectedInfo,
+  QNConnectionDisconnectedReason,
+  QNConnectionState,
+  QNMicrophoneAudioTrack,
+  QNRemoteAudioTrack,
+  QNRemoteTrack,
+  QNRTCClient,
+} from 'qnweb-rtc';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Stream } from './stream';
@@ -24,19 +30,20 @@ interface TitleProps {
   userInfo: IUserInfo;
 }
 
+let client: QNRTCClient = QNRTC.createClient();
+let localTracks: QNMicrophoneAudioTrack;
+let remoteTracks: QNRemoteAudioTrack[];
+const streams: Stream[] = [];
+const localStream: Stream = new Stream();
+
 export const Title = (props: TitleProps) => {
   const roomInfo = props.roomInfo;
   const userInfo = props.userInfo;
 
-  let localTracks: QNMicrophoneAudioTrack[] = [];
-  let client: QNRTCClient;
-  const streams: Stream[] = [];
-  const localStream: Stream = new Stream();
-
   const navigate = useNavigate();
   const [index, setIndex] = useState(1);
   const [openMicrophone, setOpenMicrophone] = useState(true);
-  const [openHear, setOpenHear] = useState(true);
+  // const [openHear, setOpenHear] = useState(true);
 
   useEffect(() => {
     joinRTCRoom();
@@ -52,10 +59,12 @@ export const Title = (props: TitleProps) => {
     );
   };
 
+  // const BoardList = () => {
+  //   return <List size="small" dataSource={data} renderItem={(item: number) => <List.Item>页面{item}</List.Item>} />;
+  // };
+
   const joinRTCRoom = async () => {
     const response = await getChatRoomToken(roomInfo.uuid);
-
-    client = QNRTC.createClient();
     client.on('user-left', (remoteUserID: string) => {
       runInAction(() => {
         const index = streams.findIndex((item) => item.user_id === remoteUserID);
@@ -63,27 +72,7 @@ export const Title = (props: TitleProps) => {
       });
     });
 
-    // 订阅远端音视频
-    client.on('user-published', async (userID: string, qntrack: QNRemoteAudioTrack[]) => {
-      runInAction(async () => {
-        const { audioTracks } = await client.subscribe(qntrack);
-
-        audioTracks.forEach((track) => {
-          let stream = streams.find((item) => item.user_id === userID && item.tag === track.tag);
-          if (stream === undefined) {
-            stream = new Stream();
-            stream.user_id = userID;
-            stream.tag = track.tag || 'mc';
-            streams.push(stream);
-          }
-          stream.audioTrack = track;
-        });
-
-        muteStateChanged([...audioTracks], streams);
-      });
-    });
-
-    // 远端音视频取消发布
+    // 远端音频取消发布
     client.on('user-unpublished', async (userID: string, qntrack: QNRemoteAudioTrack[]) => {
       runInAction(async () => {
         qntrack.forEach((track) => {
@@ -99,6 +88,50 @@ export const Title = (props: TitleProps) => {
             }
           }
         });
+      });
+    });
+
+    client.on('connection-state-changed', function (connectionState: string, info: QNConnectionDisconnectedInfo) {
+      console.log('connection-state-changed', connectionState);
+      // 当进入连接断开状态
+      if (connectionState === QNConnectionState.DISCONNECTED) {
+        // 监控断开原因
+        switch (info.reason) {
+          // 当异常断开时
+          case QNConnectionDisconnectedReason.ERROR:
+            break;
+          // 当被踢出房间时
+          case QNConnectionDisconnectedReason.KICKED_OUT:
+            break;
+          // 当调用接口，主动离开房间时
+          case QNConnectionDisconnectedReason.LEAVE:
+            break;
+        }
+      }
+    });
+
+    // 订阅远端音视频
+    client.on('user-published', async (userID: string, qntrack: QNRemoteAudioTrack[]) => {
+      runInAction(async () => {
+        const { audioTracks } = await client.subscribe(qntrack);
+        remoteTracks = audioTracks;
+        remoteTracks.forEach((track) => {
+          let stream = streams.find((item) => item.user_id === userID && item.tag === track.tag);
+          if (stream === undefined) {
+            stream = new Stream();
+            stream.user_id = userID;
+            stream.tag = track.tag || 'mc';
+            streams.push(stream);
+          }
+          stream.audioTrack = track;
+        });
+
+        muteStateChanged([...remoteTracks], streams);
+        const remoteElement = document.getElementById('body') as HTMLElement;
+        // 遍历返回的远端 Track，调用 play 方法完成在页面上的播放
+        for (const remoteTrack of [...remoteTracks]) {
+          remoteTrack.play(remoteElement);
+        }
       });
     });
 
@@ -147,7 +180,7 @@ export const Title = (props: TitleProps) => {
     await client.join(response.token);
 
     const audioConfig = { tag: 'mc' };
-    const localTracks = await QNRTC.createMicrophoneAudioTrack(audioConfig);
+    localTracks = await QNRTC.createMicrophoneAudioTrack(audioConfig);
     console.log('my local tracks', localTracks);
 
     localStream.user_id = client.userID;
@@ -156,37 +189,37 @@ export const Title = (props: TitleProps) => {
     localStream.audioTrack = localTracks;
 
     await client.publish(localTracks);
-    console.log('publish success! client.userID: ', client.userID);
 
     streams.push(localStream);
 
     subscribeRemoteUser();
   };
 
-  const quitRoom = async () => {
-    await client.leave().then(() => {
-      for (const track of localTracks) {
-        track.destroy();
-      }
-      localTracks = [];
-    });
+  const quitRTCRoom = async () => {
+    await client.leave();
     const response = await exitRoom(roomInfo.uuid);
     if (response.code === 200) {
       navigate('/home', { replace: true });
     }
   };
 
-  const changeHear = async () => {
-    setOpenHear(!openHear);
-  };
+  // const changeHear = async () => {
+  //   setOpenHear(!openHear);
+  // };
 
   const changeMicrophone = async () => {
-    setOpenMicrophone(!openMicrophone);
+    if (openMicrophone) {
+      localStream.muteTrack('audio', true);
+      setOpenMicrophone(false);
+    } else {
+      localStream.muteTrack('audio', false);
+      setOpenMicrophone(true);
+    }
   };
 
   return (
     <div className="title">
-      <img src={quit} onClick={quitRoom} />
+      <img src={quit} onClick={quitRTCRoom} />
       <h3 className="room-name">
         {typeMap.get(roomInfo.type)}:{roomInfo.name}的页面{index}
       </h3>
@@ -200,7 +233,7 @@ export const Title = (props: TitleProps) => {
       <Popover content={<ParticipantsList />} title={`主持人:${roomInfo.host_name}`} trigger="click" placement="bottom">
         <img className="room-title-item" src={friends} />
       </Popover>
-      <img id="player" className="room-title-item" src={openHear ? hear : muteHear} onClick={changeHear} />
+      {/* <img id="player" className="room-title-item" src={openHear ? hear : muteHear} onClick={changeHear} /> */}
       <img className="room-title-item" src={openMicrophone ? microphone : muteMicrophone} onClick={changeMicrophone} />
       <img className="room-title-item" src={download} />
       <img className="room-title-item" src={share} />
