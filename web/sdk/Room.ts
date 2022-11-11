@@ -1,4 +1,4 @@
-import { FabricObjects } from './Fabric';
+// @ts-nocheck
 import { EventCenter } from './EventCenter';
 import { Canvas } from './Canvas';
 import { FabricObject } from './FabricObject';
@@ -8,7 +8,7 @@ type optionsType = {
   userId: string;
   onlyRead: boolean;
   el: HTMLCanvasElement;
-  elOptions?: {};
+  userName: string;
 };
 export class Room extends EventCenter {
   public canvasMap: Map<string, Canvas> = new Map();
@@ -21,6 +21,7 @@ export class Room extends EventCenter {
   public serverTimeoutObj: any = null;
   public reConnectObj: any = null;
   public el: HTMLCanvasElement;
+  public userName: string;
 
   constructor(options: optionsType) {
     super();
@@ -28,6 +29,7 @@ export class Room extends EventCenter {
     this.userId = options.userId;
     this.onlyRead = options.onlyRead || false;
     this.el = options.el;
+    this.userName = options.userName;
     this.initWS();
     this.initBindRoomEvent();
   }
@@ -58,7 +60,7 @@ export class Room extends EventCenter {
             if (object.objectId === res.objectId) {
               if (object.active) return;
               const objectData = JSON.parse(res.content) as FabricObject;
-              for (const key in objectData) {
+              for (const key of Object.keys(objectData)) {
                 object[key] = objectData[key];
               }
               canvas.renderAll();
@@ -81,7 +83,7 @@ export class Room extends EventCenter {
       } else if (res.contentType === 8) {
         const canvasId = JSON.parse(res.content).canvasId;
         this.emit('createCanvas', { canvasId });
-        this.emit('new', { canvasId });
+        this.emit('new', { canvasId, userId: this.userName });
       } else if (res.contentType === 9) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
           const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;

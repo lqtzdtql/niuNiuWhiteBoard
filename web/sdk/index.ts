@@ -11,7 +11,7 @@ export async function joinRoom(params: paramsType) {
   const res = await fetch(`/auth?token=${params.token}`);
   if (res.status >= 200 && res.status < 300) {
     const resData = await res.json();
-    const { user_uuid, room_uuid, code, message } = resData;
+    const { user_uuid, room_uuid, code, message, userName } = resData;
     if (code !== 200) {
       return message;
     } else {
@@ -20,7 +20,7 @@ export async function joinRoom(params: paramsType) {
         userId: user_uuid,
         onlyRead: params.onlyRead,
         el: params.el,
-        elOptions: params.elOptions,
+        userName,
       };
       const room = new Room(roomData);
       return room;
