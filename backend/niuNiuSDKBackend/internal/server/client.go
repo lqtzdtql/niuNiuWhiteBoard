@@ -9,8 +9,8 @@ import (
 
 type Client struct {
 	Conn          *websocket.Conn //一个账号，一个连接
-	UUID          string
-	RoomUUID      string
+	UUID          string          //参与者uuid
+	RoomUUID      string          //参与者所在房间uuid
 	Send          chan []byte
 	HeartbeatTime int64 // 前一次心跳时间
 }
@@ -35,8 +35,7 @@ func (c *Client) Read() {
 		// pong
 		if msg.ContentType == models.HEAT_BEAT {
 			c.HeartbeatTime = time.Now().Unix()
-			pong := &models.Message{
-				Content:     models.PONG,
+			pong := &models.HeatBeatRes{
 				ContentType: models.HEAT_BEAT,
 			}
 			c.Conn.WriteJSON(pong)

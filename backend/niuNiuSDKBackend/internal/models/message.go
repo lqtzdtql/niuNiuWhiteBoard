@@ -1,17 +1,18 @@
 package models
 
+// ContentType为信令种类
 const (
-	PONG = "pong"
-
-	//ContentType为消息类型，如心跳，普通信令，一般绘图消息。
 	HEAT_BEAT     = 1
-	SIGNALING     = 2
+	UPDATE_BOARD  = 2
 	OBJECT_NEW    = 3
 	OBJECT_MODIFY = 4
 	OBJECT_DELETE = 5
 	SWITCH_BOARD  = 6
 	DRAWING_LOCK  = 7
 	CREATE_BOARD  = 8
+	CAN_LOCK      = 9
+	LEAVE_ROOM    = 10
+	CANVAS_LIST   = 11
 )
 
 /*
@@ -31,10 +32,61 @@ const (
 
 type Message struct {
 	From         string `json:"from,omitempty"`
-	To           string `json:"to,omitempty"` //房间号
-	ToWhiteBoard string `json:"toWhiteBoard"`
+	ToRoom       string `json:"to,omitempty"`
+	ToWhiteBoard string `json:"toWhiteBoard,omitempty"`
+	ToUser       string `json:"toUser,omitempty"`
 	ObjectId     string `json:"objectId,omitempty"`
+	ContentType  int32  `json:"contentType"`
+	Content      string `json:"content,omitempty"`
+	Timestamp    int64  `json:"timestamp,omitempty"`
+	IsLock       bool   `json:"isLock,omitempty"`
+	ReadOnly     bool   `json:"readOnly,omitempty"`
+	LeaveUser    string `json:"leaveUser,omitempty"`
+}
+
+// HEAT_BEAT回复
+type HeatBeatRes struct {
+	ContentType int32 `json:"contentType"`
+}
+
+// UPDATE_BOARD，SWITCH_BOARD（切换白板需要将当前用户的currentBoard修改）
+type UpdateBoardRes struct {
+	ContentType  int32  `json:"contentType"`
+	ToWhiteBoard string `json:"toWhiteBoard"`
 	Content      string `json:"content"`
-	ContentType  int32  `json:"contentType,omitempty"`
-	UpdateAt     int64  `json:"updateAt,omitempty"`
+}
+
+// OBJECT_NEW，OBJECT_MODIFY，OBJECT_DELETE
+type ObjectRes struct {
+	ContentType  int32  `json:"contentType"`
+	ObjectId     string `json:"objectId"`
+	ToWhiteBoard string `json:"toWhiteBoard"`
+	Content      string `json:"content"`
+}
+
+// DRAWING_LOCK
+type DrawingLockRes struct {
+	ContentType  int32  `json:"contentType"`
+	ObjectId     string `json:"objectId"`
+	ToWhiteBoard string `json:"toWhiteBoard"`
+	IsLock       bool   `json:"isLock"`
+}
+
+// CREATE_BOARD
+type CreateBoardRes struct {
+	ContentType int32  `json:"contentType"`
+	Content     string `json:"content"`
+}
+
+// CAN_LOCK
+type CanLockRes struct {
+	ContentType  int32  `json:"contentType"`
+	ObjectId     string `json:"objectId"`
+	ToWhiteBoard string `json:"toWhiteBoard"`
+}
+
+// LEAVE_ROOM
+type LeaveRoomRes struct {
+	ContentType int32  `json:"contentType"`
+	Content     string `json:"content"`
 }

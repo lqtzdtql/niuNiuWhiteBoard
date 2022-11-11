@@ -1,41 +1,29 @@
 package database
 
 import (
-	"github.com/gomodule/redigo/redis"
+	"context"
+	"github.com/go-redis/redis/v8"
+	"niuNiuSDKBackend/common/log"
+
+	conf "niuNiuSDKBackend/config"
 	"time"
 )
 
-var RedisClient *redis.Pool
-var RedisExpire = 86400 * 7
-var RedisSuf = "niuNiuWhiteSDK.redis."
-
-var Redis = map[string]string{
-	"name":    "redis",
-	"type":    "tcp",
-	"address": "127.0.0.1:6379",
-	"auth":    "",
-}
+var Rdb *redis.Client
 
 func init() {
-	// 建立连接池
-	RedisClient = &redis.Pool{
-		// 从配置文件获取maxidle以及maxactive，取不到则用后面的默认值
-		MaxIdle: 16, //最初的连接数量
-		// MaxActive:1000000,    //最大连接数量
-		MaxActive:   0,                 //连接池最大连接数量,不确定可以用0（0表示自动定义），按需分配
-		IdleTimeout: 300 * time.Second, //连接关闭时间 300秒 （300秒不使用自动关闭）
-		Dial: func() (redis.Conn, error) { //要连接的redis数据库
-			c, err := redis.Dial(Redis["type"], Redis["address"])
-			if err != nil {
-				return nil, err
-			}
-			if Redis["auth"] != "" {
-				if _, err := c.Do("AUTH", Redis["auth"]); err != nil {
-					_ = c.Close()
-					return nil, err
-				}
-			}
-			return c, nil
-		},
+	Rdb = redis.NewClient(&redis.Options{
+		Addr:     conf.GetConfig().RedisConfig.Addr,
+		Password: conf.GetConfig().RedisConfig.Password, // 密码
+		DB:       conf.GetConfig().RedisConfig.DB,       // 数据库
+		PoolSize: conf.GetConfig().RedisConfig.PoolSize, // 连接池大小
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := Rdb.Ping(ctx).Result()
+	if err != nil {
+		log.Logger.Fatal("redis init err", log.Any("redis init err", err.Error()))
 	}
+
 }
