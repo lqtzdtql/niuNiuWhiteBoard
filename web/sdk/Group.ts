@@ -137,7 +137,13 @@ export class Group extends FabricObject {
     object.hasControls = object.orignHasControls;
     // delete object.__origHasControls;
     object.setActive(false);
+    this.emit('sendUnlock', { objectId: object.objectId });
     object.setCoords();
+
+    if (object.hasStateChanged()) {
+      object.canvas.emit('object:modified', { object });
+      object.emit('modified');
+    }
 
     return this;
   }

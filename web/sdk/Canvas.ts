@@ -749,23 +749,28 @@ export class Canvas extends EventCenter {
 
       // 物体是否与拖蓝选区相交或者被选区包含
       if (
-        currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||
-        currentObject.isContainedWithinRect(selectionX1Y1, selectionX2Y2)
+        (currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||
+          currentObject.isContainedWithinRect(selectionX1Y1, selectionX2Y2)) &&
+        !currentObject.isLocked
       ) {
-        currentObject.setActive(true);
-        objects.push(currentObject);
+        this.emit('sendLock', { objectId: currentObject.objectId });
+        currentObject.on('canLock', () => {
+          currentObject.setActive(true);
+          objects.push(currentObject);
+          if (objects.length === 1) {
+            this.setActiveObject(objects[0], e);
+            this._activeObject = objects[0];
+          } else if (objects.length > 1) {
+            this._activeObject = null;
+            const newGroup = new Group(objects);
+            this.setActiveGroup(newGroup);
+            // newGroup.saveCoords();
+            // this.emit('selection:created', { target: newGroup });
+          }
+          this.renderAll();
+        });
       }
     }
-
-    if (objects.length === 1) {
-      this.setActiveObject(objects[0], e);
-    } else if (objects.length > 1) {
-      const newGroup = new Group(objects);
-      this.setActiveGroup(newGroup);
-      // newGroup.saveCoords();
-      // this.emit('selection:created', { target: newGroup });
-    }
-
     this.renderAll();
   }
   setActiveGroup(group: Group): Canvas {

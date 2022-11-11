@@ -153,6 +153,23 @@ export class Room extends EventCenter {
         }, 2000);
       }
     }, 5000);
+    setInterval(() => {
+      if (this.ws && this.ws.readyState === 1) {
+        this.ws.send(
+          JSON.stringify({
+            from: this.userId,
+            contentType: 2,
+          }),
+        );
+        this.ws.send(
+          JSON.stringify({
+            from: this.userId,
+            toRoom: this.roomId,
+            contentType: 11,
+          }),
+        );
+      }
+    }, 5000);
   }
 
   closeWs() {
