@@ -27,6 +27,7 @@ export class Room extends EventCenter {
     this.userId = options.userId;
     this.onlyRead = options.onlyRead || false;
     this.initWS();
+    this.initBindRoomEvent();
     this.createCanvas(options.el, options?.elOptions);
   }
 
@@ -68,6 +69,9 @@ export class Room extends EventCenter {
           const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
           canvas.delete(res.objectId, false);
         }
+      } else if (res.contentType === 6) {
+        const objects = JSON.parse(res.content).objects;
+        this.emit('switch', { canvasId: res.totoWhiteBoard, objects });
       } else if (res.contentType === 7) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
           const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
@@ -81,7 +85,7 @@ export class Room extends EventCenter {
           const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
           for (const i of canvas._objects) {
             if (i.objectId === res.objectId) {
-              if (res.canLock) {
+              if (!res.isLock) {
                 i.emit('canLock');
               } else {
                 i.off('canLock');
@@ -94,6 +98,23 @@ export class Room extends EventCenter {
       } else if (res.contentType === 10) {
         const leaveUserId = res.leaveUser;
         this.emit('leaveRoom', { leaveUserId });
+      }
+    });
+  }
+
+  initBindRoomEvent() {
+    this.on('switch', (options: { canvasId: string; objects: string[] }) => {
+      if (this.canvasMap.has(options.canvasId)) {
+        const temp = this.canvasMap.get(this.currentCanvasId) as Canvas;
+        const activeObject = temp.getActiveObject();
+        if (activeObject) {
+          temp.discardActiveObject();
+        }
+        temp.clearContext(temp.contextContainer);
+        temp.clearContext(temp.contextTop);
+        this.currentCanvasId = options.canvasId;
+        const canvas = this.canvasMap.get(options.canvasId) as Canvas;
+        canvas.emit('update', { objects: options.objects });
       }
     });
   }
