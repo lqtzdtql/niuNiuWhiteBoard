@@ -51,12 +51,13 @@ export class Canvas extends EventCenter {
   public hoverCursor: string = 'move';
   public moveCursor: string = 'move';
   public rotationCursor: string = 'crosshair';
-  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮9文字10自由线条 */
+  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮9文字10自由线条11涂鸦 */
   public brush: {} = { type: 0 };
   public start: Pos = {};
   public end: Pos = {};
   public temp: Pos = {};
   public penPath: Pos[] = [];
+  public graffitiPath: Pos[] = [];
 
   public viewportTransform: number[] = [1, 0, 0, 1, 0, 0];
   public vptCoords: {};
@@ -309,6 +310,10 @@ export class Canvas extends EventCenter {
       this.discardActiveObject();
       this.renderAll();
       this.penPath.push(this.getPointer(e, this.upperCanvasEl));
+    } else if (this.brush.type === 11) {
+      this.discardActiveObject();
+      this.renderAll();
+      this.graffitiPath.push(this.getPointer(e, this.upperCanvasEl));
     } else {
       this.discardActiveObject();
       this.renderAll();
@@ -438,6 +443,9 @@ export class Canvas extends EventCenter {
     } else if (this.brush.type === 10 && this.penPath.length) {
       this.penPath.push(this.getPointer(e, this.upperCanvasEl));
       this.renderTop();
+    } else if (this.brush.type === 11 && this.graffitiPath.length) {
+      this.graffitiPath.push(this.getPointer(e, this.upperCanvasEl));
+      this.renderTop();
     } else if (this.brush.type !== 8 && this.brush.type !== 9) {
       this.temp = this.getPointer(e, this.upperCanvasEl);
       this.renderTop();
@@ -526,22 +534,26 @@ export class Canvas extends EventCenter {
       this.emit('mouse:up', { target, e });
       target && target.emit('mouseup', { e });
     } else if (this.brush.type !== 8) {
-      const _drawFunctionList = [
-        null,
-        '_drawLine',
-        '_drawCurve',
-        '_drawRect',
-        '_drawDiamond',
-        '_drawTriangle',
-        '_drawRound',
-        '_drawArrow',
-      ];
       this.end = this.getPointer(e, this.upperCanvasEl);
       if (this.brush.type === 9) {
         this._drawText(this.start);
       } else if (this.brush.type === 10) {
+        this.penPath.push(this.end);
         this._drawPenPath(this.penPath, 2);
+      } else if (this.brush.type === 11) {
+        this.graffitiPath.push(this.end);
+        this._drawPenPath(this.graffitiPath, 3);
       } else {
+        const _drawFunctionList = [
+          null,
+          '_drawLine',
+          '_drawCurve',
+          '_drawRect',
+          '_drawDiamond',
+          '_drawTriangle',
+          '_drawRound',
+          '_drawArrow',
+        ];
         this[_drawFunctionList[this.brush.type]](this.start, this.end, 2);
       }
       this.start = {};
@@ -801,6 +813,8 @@ export class Canvas extends EventCenter {
     ];
     if (this.brush.type === 10) {
       this._drawPenPath(this.penPath, 1);
+    } else if (this.brush.type === 11) {
+      this._drawPenPath(this.graffitiPath[this.graffitiPath.length - 1], 1);
     } else if (this.brush.type !== 0) {
       this[_drawFunctionList[this.brush.type]](this.start, this.temp, 1);
     }
@@ -1081,14 +1095,14 @@ export class Canvas extends EventCenter {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
-      for (let i = 1; i < this.penPath.length; i++) {
+      for (let i = 1; i < penPathList.length; i++) {
         this.contextTop.beginPath();
-        this.contextTop.moveTo(this.penPath[i - 1].x, this.penPath[i - 1].y);
-        this.contextTop.lineTo(this.penPath[i].x, this.penPath[i].y);
+        this.contextTop.moveTo(penPathList[i - 1].x, penPathList[i - 1].y);
+        this.contextTop.lineTo(penPathList[i].x, penPathList[i].y);
         this.contextTop.closePath();
         this.contextTop.stroke();
       }
-    } else {
+    } else if (lab === 2) {
       const penPath = new FabricObjects.Pen({
         left: (maxx + minx) / 2,
         top: (maxy + miny) / 2,
@@ -1108,7 +1122,24 @@ export class Canvas extends EventCenter {
       });
       this.add(true, penPath);
       this.penPath = [];
+    } else {
+      this.contextCache.lineWidth = this.brush.strokeWidth;
+      this.contextCache.strokeStyle = this.brush.stroke;
+      for (let i = 1; i < penPathList.length; i++) {
+        this.contextCache.beginPath();
+        this.contextCache.moveTo(penPathList[i - 1].x, penPathList[i - 1].y);
+        this.contextCache.lineTo(penPathList[i].x, penPathList[i].y);
+        this.contextCache.closePath();
+        this.contextCache.stroke();
+      }
+      while (this.graffitiPath.length) {
+        this.graffitiPath.pop();
+      }
     }
+  }
+
+  clearGraffiti() {
+    this.clearContext(this.contextCache);
   }
 
   revoke() {
@@ -1458,50 +1489,42 @@ export class Canvas extends EventCenter {
 
     if (target) return target;
   }
-  /**
-   * 用缓冲层判断物体是否透明，目前默认都是不透明，可以加一些参数属性，比如允许有几个像素的误差
-   * @param {FabricObject} target 物体
-   * @param {number} x 鼠标的 x 值
-   * @param {number} y 鼠标的 y 值
-   * @param {number} tolerance 允许鼠标的误差范围
-   * @returns
-   */
-  _isTargetTransparent(target: FabricObject, x: number, y: number, tolerance: number = 0) {
-    // 1、在缓冲层绘制物体
-    // 2、通过 getImageData 获取鼠标位置的像素数据信息
-    // 3、遍历像素数据，如果找到一个 rgba 中的 a 值 > 0 就说明至少有一个颜色，亦即不透明，退出循环
-    // 4、清空 getImageData 变量，并清除缓冲层画布
-    let cacheContext = this.contextCache;
-    this._draw(cacheContext, target);
+  // _isTargetTransparent(target: FabricObject, x: number, y: number, tolerance: number = 0) {
+  //   // 1、在缓冲层绘制物体
+  //   // 2、通过 getImageData 获取鼠标位置的像素数据信息
+  //   // 3、遍历像素数据，如果找到一个 rgba 中的 a 值 > 0 就说明至少有一个颜色，亦即不透明，退出循环
+  //   // 4、清空 getImageData 变量，并清除缓冲层画布
+  //   let cacheContext = this.contextCache;
+  //   this._draw(cacheContext, target);
 
-    if (tolerance > 0) {
-      // 如果允许误差
-      if (x > tolerance) {
-        x -= tolerance;
-      } else {
-        x = 0;
-      }
-      if (y > tolerance) {
-        y -= tolerance;
-      } else {
-        y = 0;
-      }
-    }
+  //   if (tolerance > 0) {
+  //     // 如果允许误差
+  //     if (x > tolerance) {
+  //       x -= tolerance;
+  //     } else {
+  //       x = 0;
+  //     }
+  //     if (y > tolerance) {
+  //       y -= tolerance;
+  //     } else {
+  //       y = 0;
+  //     }
+  //   }
 
-    let isTransparent = true;
-    let imageData = cacheContext.getImageData(x, y, tolerance * 2 || 1, tolerance * 2 || 1);
+  //   let isTransparent = true;
+  //   let imageData = cacheContext.getImageData(x, y, tolerance * 2 || 1, tolerance * 2 || 1);
 
-    for (let i = 3; i < imageData.data.length; i += 4) {
-      // 只要看第四项透明度即可
-      let temp = imageData.data[i];
-      isTransparent = temp <= 0;
-      if (isTransparent === false) break; // 找到一个颜色就停止
-    }
+  //   for (let i = 3; i < imageData.data.length; i += 4) {
+  //     // 只要看第四项透明度即可
+  //     let temp = imageData.data[i];
+  //     isTransparent = temp <= 0;
+  //     if (isTransparent === false) break; // 找到一个颜色就停止
+  //   }
 
-    imageData = null;
-    this.clearContext(cacheContext);
-    return isTransparent;
-  }
+  //   imageData = null;
+  //   this.clearContext(cacheContext);
+  //   return isTransparent;
+  // }
   containsPoint(e: MouseEvent, target: FabricObject): boolean {
     let pointer = this.getPointer(e),
       xy = this._normalizePointer(target, pointer),
