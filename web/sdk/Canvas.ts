@@ -51,7 +51,7 @@ export class Canvas extends EventCenter {
   public hoverCursor: string = 'move';
   public moveCursor: string = 'move';
   public rotationCursor: string = 'crosshair';
-  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮9文字10自由线条11涂鸦 */
+  /**笔刷： 0默认1直线2曲线3矩形4菱形5三角形6圆形7箭头8橡皮9文字10自由线条11涂鸦12动画 */
   public brush: {} = { type: 0 };
   public start: Pos = {};
   public end: Pos = {};
@@ -314,11 +314,30 @@ export class Canvas extends EventCenter {
       this.discardActiveObject();
       this.renderAll();
       this.graffitiPath.push(this.getPointer(e, this.upperCanvasEl));
+    } else if (this.brush.type === 12) {
+      let target = this.findTarget(e);
+      if (!target.active) {
+        return;
+      } else {
+        if (!target.isAddingAnimate) {
+          target.saveState();
+          target.animateStart = { ...target.originalState };
+        } else {
+          target.saveState();
+          target.animateEnd = { ...target.originalState };
+        }
+      }
     } else {
       this.discardActiveObject();
       this.renderAll();
       this.start = this.getPointer(e, this.upperCanvasEl);
     }
+  }
+
+  addAnimate(target: FabricObject) {
+    const props = target.animateEnd;
+    const animateOptions =;
+    target.animate();
   }
   /** 处理鼠标 hover 事件和物体变换时的拖拽事件
    * 如果是涂鸦模式，只绘制 upper-canvas
@@ -842,7 +861,7 @@ export class Canvas extends EventCenter {
         left: start.x + (end.x - start.x) / 2,
         top: start.y,
         stroke: this.brush.stroke,
-        strokeWidth: this.strokeWidth || 1,
+        strokeWidth: this.brush.strokeWidth || 1,
       });
       line.on('added', () => {
         console.log('直线被添加了');
@@ -883,7 +902,11 @@ export class Canvas extends EventCenter {
         height: Math.abs(start.y - end.y),
         left: start.x + (end.x - start.x) / 2,
         top: start.y + (end.y - start.y) / 2,
-        fill: 'red',
+        fill: this.brush.fill,
+        stroke: this.brush.stroke,
+        strokeWidth: this.brush.strokeWidth || 1,
+        rx: this.brush.rx || 0,
+        ry: this.brush.ry || 0,
       });
       rect.on('added', () => {
         console.log('rect被添加了');
@@ -922,7 +945,9 @@ export class Canvas extends EventCenter {
         width: Math.abs(start.x - end.x),
         left: start.x + (end.x - start.x) / 2,
         top: start.y,
-        fill: 'red',
+        fill: this.brush.fill,
+        stroke: this.brush.stroke,
+        strokeWidth: this.brush.strokeWidth || 1,
       });
       diamond.on('added', () => {
         console.log('diamond被添加了');
@@ -960,7 +985,9 @@ export class Canvas extends EventCenter {
         width: Math.abs(start.x - end.x),
         left: start.x + (end.x - start.x) / 2,
         top: start.y - Math.abs(end.x - start.x) / 2,
-        fill: 'red',
+        fill: this.brush.fill,
+        stroke: this.brush.stroke,
+        strokeWidth: this.brush.strokeWidth || 1,
       });
       triangle.on('added', () => {
         console.log('triangle被添加了');
@@ -1003,7 +1030,9 @@ export class Canvas extends EventCenter {
         left: (start.x + end.x) / 2,
         top: start.y,
         roundAngle: 360,
-        fill: 'green',
+        fill: this.brush.fill,
+        stroke: this.brush.stroke,
+        strokeWidth: this.brush.strokeWidth || 1,
       });
       round.on('added', () => {
         console.log('round被添加了');
@@ -1023,19 +1052,24 @@ export class Canvas extends EventCenter {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
-      this.contextTop.beginPath();
       if (end.x >= start.x) {
+        this.contextTop.beginPath();
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x - 15, start.y);
-        this.contextTop.moveTo(end.x - 15, start.y + 15);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y);
+        this.contextTop.beginPath();
+        this.contextTop.moveTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x - 15, start.y - 15);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y - this.brush.headlen);
+        this.contextTop.LineTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
       } else {
+        this.contextTop.beginPath();
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x + 15, start.y);
-        this.contextTop.moveTo(end.x + 15, start.y + 15);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y);
+        this.contextTop.beginPath();
+        this.contextTop.moveTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x + 15, start.y - 15);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y - this.brush.headlen);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
       }
       this.contextTop.closePath();
       this.contextTop.stroke();
@@ -1045,7 +1079,7 @@ export class Canvas extends EventCenter {
         left: (end.x + start.x) / 2,
         top: start.y,
         stroke: this.brush.stroke,
-        strokeWidth: this.strokeWidth || 1,
+        strokeWidth: this.brush.strokeWidth || 1,
         direction: end.x - start.x,
         headlen: this.brush.headlen || 15,
       });
@@ -1068,6 +1102,11 @@ export class Canvas extends EventCenter {
       top: target.y,
       size: 20,
       text: this.brush.text,
+      fill: this.brush.fill,
+      stroke: this.brush.stroke,
+      strokeWidth: this.brush.strokeWidth || 1,
+      fillText: this.brush.fillText,
+      strokeText: this.brush.strokeText,
     });
     text.on('added', () => {
       console.log('text被添加了');
@@ -1109,6 +1148,8 @@ export class Canvas extends EventCenter {
         width: maxx - minx,
         height: maxy - miny,
         penPath: penPathList,
+        stroke: this.brush.stroke,
+        strokeWidth: this.brush.strokeWidth || 1,
       });
       penPath.on('added', () => {
         console.log('penPath被添加了');

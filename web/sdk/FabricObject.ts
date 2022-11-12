@@ -94,6 +94,9 @@ export class FabricObject extends EventCenter {
   public timestamp: number = 0;
   public objectId: string = '';
   public isLocked: boolean = false;
+  public isAddingAnimate: boolean = false;
+  public animateStart;
+  public animateEnd;
 
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheContext: CanvasRenderingContext2D;
@@ -199,7 +202,7 @@ export class FabricObject extends EventCenter {
 
     ctx.save();
 
-    ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
+    ctx.globalAlpha = this.isMoving || this.isAddingAnimate ? this.borderOpacityWhenMoving : 1;
     ctx.strokeStyle = this.borderColor;
     ctx.lineWidth = strokeWidth;
 
@@ -259,7 +262,7 @@ export class FabricObject extends EventCenter {
 
     ctx.lineWidth = this.borderWidth / Math.max(this.scaleX, this.scaleY);
 
-    ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
+    ctx.globalAlpha = this.isMoving || this.isAddingAnimate ? this.borderOpacityWhenMoving : 1;
     ctx.strokeStyle = ctx.fillStyle = this.cornerColor;
 
     // top-left
@@ -575,6 +578,7 @@ export class FabricObject extends EventCenter {
     }
 
     Util.animate({
+      startTime: options.startTime || 0,
       startValue: options.from,
       endValue: to,
       byValue: options.by,
