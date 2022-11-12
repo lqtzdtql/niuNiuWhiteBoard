@@ -314,11 +314,29 @@ export class Canvas extends EventCenter {
       this.discardActiveObject();
       this.renderAll();
       this.graffitiPath.push(this.getPointer(e, this.upperCanvasEl));
+    } else if (this.brush.type === 12) {
+      let target = this.findTarget(e);
+      if (!target.active) {
+        return;
+      } else {
+        if (!target.isAddingAnimate) {
+          target.saveState();
+          target.animateStart = { ...target.originalState };
+        } else {
+          target.saveState();
+          target.animateEnd = { ...target.originalState };
+        }
+      }
     } else {
       this.discardActiveObject();
       this.renderAll();
       this.start = this.getPointer(e, this.upperCanvasEl);
     }
+  }
+
+  addAnimate(target: FabricObject) {
+    const props = {};
+    target.animate();
   }
   /** 处理鼠标 hover 事件和物体变换时的拖拽事件
    * 如果是涂鸦模式，只绘制 upper-canvas
@@ -561,8 +579,6 @@ export class Canvas extends EventCenter {
     console.log('1111111111', this._objects);
     console.log('2222222', this._currentTransform);
   }
-
-  addAnimate() {}
 
   modifyBrush(options) {
     this.brush = options;
@@ -1038,16 +1054,16 @@ export class Canvas extends EventCenter {
       this.contextTop.beginPath();
       if (end.x >= start.x) {
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x - 15, start.y);
-        this.contextTop.moveTo(end.x - 15, start.y + 15);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y);
+        this.contextTop.moveTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x - 15, start.y - 15);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y - this.brush.headlen);
       } else {
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x + 15, start.y);
-        this.contextTop.moveTo(end.x + 15, start.y + 15);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y);
+        this.contextTop.moveTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x + 15, start.y - 15);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y - this.brush.headlen);
       }
       this.contextTop.closePath();
       this.contextTop.stroke();
@@ -1057,7 +1073,7 @@ export class Canvas extends EventCenter {
         left: (end.x + start.x) / 2,
         top: start.y,
         stroke: this.brush.stroke,
-        strokeWidth: this.strokeWidth || 1,
+        strokeWidth: this.brush.strokeWidth || 1,
         direction: end.x - start.x,
         headlen: this.brush.headlen || 15,
       });

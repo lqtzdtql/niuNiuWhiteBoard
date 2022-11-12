@@ -16,9 +16,8 @@ export class Arrow extends FabricObject {
   }
 
   _initArrow(options: any) {
-    this.headlen = options.headlen || 10;
     this.direction = options.direction || 0;
-    this.headlen = options.handler || 15;
+    this.headlen = options.handlen || 15;
     this.height = 30;
   }
 
