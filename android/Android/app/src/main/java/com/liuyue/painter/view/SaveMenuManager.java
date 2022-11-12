@@ -36,14 +36,17 @@ public class SaveMenuManager implements View.OnClickListener {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.save_png_btn:
-                if (mSaveBtnClickListener != null)
-                    mSaveBtnClickListener.SaveClick(Constants.PNG);
+                if (mSaveBtnClickListener != null) {
+                    mSaveBtnClickListener.onSaveClick(Constants.PNG);
+                }
                 break;
             case R.id.save_svg_btn:
-                if (mSaveBtnClickListener != null)
-                    mSaveBtnClickListener.SaveClick(Constants.SVG);
+                if (mSaveBtnClickListener != null) {
+                    mSaveBtnClickListener.onSaveClick(Constants.SVG);
+                }
                 break;
-
+            default:
+                break;
         }
     }
 
@@ -52,6 +55,6 @@ public class SaveMenuManager implements View.OnClickListener {
     }
 
     public interface SaveBtnClickListener {
-        void SaveClick(int savekind);
+        void onSaveClick(int savekind);
     }
 }

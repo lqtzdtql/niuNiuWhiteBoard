@@ -6,7 +6,7 @@ import android.widget.ImageButton;
 
 import com.liuyue.painter.R;
 
-public class FootUiManager implements View.OnClickListener {
+public class FootUIManager implements View.OnClickListener {
     Context mContext;
     View mView;
     ImageButton mBrushSizeBtn;
@@ -24,7 +24,7 @@ public class FootUiManager implements View.OnClickListener {
     private EraserBtnOnClickListener mEraserBtnOnClickListener;
     private ShapeChooseBtnOnclickListener mShapeChooseBtnOnclickListener;
 
-    public FootUiManager(Context mContext, View mView) {
+    public FootUIManager(Context mContext, View mView) {
         this.mContext = mContext;
         this.mView = mView;
         initView();
@@ -56,7 +56,8 @@ public class FootUiManager implements View.OnClickListener {
                 // 选择宽度功能
                 if (mSizeBtnOnclickListener != null) {
                     mSizeBtnOnclickListener.Clicked(isShow);
-                    isShow = !isShow;// 状态取反
+                    // 状态取反
+                    isShow = !isShow;
                 }
                 break;
 
@@ -92,6 +93,8 @@ public class FootUiManager implements View.OnClickListener {
                     mShapeBtnClickListener.onShapeBtnClicked(isShow);
                     isShow = !isShow;
                 }
+                break;
+            default:
                 break;
         }
     }

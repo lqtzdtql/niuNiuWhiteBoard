@@ -5,15 +5,16 @@ import com.google.gson.Gson;
 import java.util.List;
 
 public class HallBean {
+
     /**
      * code : 200
-     * message : get roomlist success
-     * roomlist : [{"uuid":"01GH4CACYSK4DC9DJQEKS8E07J","name":"teatRoom","host_id":1,"type":"teaching_room"},{"uuid":"01GH4EV2T8A3RGW2NZ7S840SGE","name":"teatRoom","host_id":2,"type":"teaching_room"}]
+     * message : 获取房间列表成功
+     * roomlist : [{"uuid":"01GHKVWDRSMRJYGK3JK2VD0Z6Q","name":"213213123","host_name":"1","type":"teaching_room"}]
      */
 
     private int code;
     private String message;
-    private List<RoomlistBean> roomList;
+    private List<RoomlistBean> roomlist;
 
     public static HallBean parse(String str) {
         return new Gson().fromJson(str, HallBean.class);
@@ -36,24 +37,24 @@ public class HallBean {
     }
 
     public List<RoomlistBean> getRoomList() {
-        return roomList;
+        return roomlist;
     }
 
-    public void setRoomList(List<RoomlistBean> roomList) {
-        this.roomList = roomList;
+    public void setRoomlist(List<RoomlistBean> roomlist) {
+        this.roomlist = roomlist;
     }
 
     public static class RoomlistBean {
         /**
-         * uuid : 01GH4CACYSK4DC9DJQEKS8E07J
-         * name : teatRoom
-         * host_id : 1
+         * uuid : 01GHKVWDRSMRJYGK3JK2VD0Z6Q
+         * name : 213213123
+         * host_name : 1
          * type : teaching_room
          */
 
         private String uuid;
         private String name;
-        private int hostId;
+        private String host_name;
         private String type;
 
         public static RoomlistBean parse(String str) {
@@ -76,12 +77,12 @@ public class HallBean {
             this.name = name;
         }
 
-        public int getHostId() {
-            return hostId;
+        public String getHostName() {
+            return host_name;
         }
 
-        public void setHostId(int hostId) {
-            this.hostId = hostId;
+        public void setHostName(String hostName) {
+            this.host_name = hostName;
         }
 
         public String getType() {

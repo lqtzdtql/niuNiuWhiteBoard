@@ -17,7 +17,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.KeyboardUtils;
 import com.blankj.utilcode.util.RegexUtils;
 import com.blankj.utilcode.util.SPUtils;
@@ -32,7 +31,6 @@ import com.liuyue.painter.utils.AppServer;
 import com.liuyue.painter.utils.NickNameUtils;
 
 public class LoginActivity extends BaseActivity {
-
     private EditText mEtPhone;
     private EditText mEtPassword;
     private TextInputLayout mTextInputLayout;
@@ -49,7 +47,6 @@ public class LoginActivity extends BaseActivity {
 
     @Override
     protected void initView() {
-        initStatusBar();
         mEtPhone = findViewById(R.id.et_login_phone);
         mEtPassword = findViewById(R.id.et_login_password);
         mTextInputLayout = findViewById(R.id.layout_login_phone);
@@ -57,12 +54,6 @@ public class LoginActivity extends BaseActivity {
         mRbUserAgreement = findViewById(R.id.rb_login_user_agreement);
         mTvUserAgreement = findViewById(R.id.tv_login_user_agreement);
         initUserAgreement();
-    }
-
-    private void initStatusBar() {
-        BarUtils.transparentStatusBar(this);
-        // 设置状态栏文字颜色及图标为深色
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
     }
 
     @Override
@@ -86,7 +77,7 @@ public class LoginActivity extends BaseActivity {
     @Override
     protected void initData() {
         SPUtils spUtils = SPUtils.getInstance(Constants.SP_USER_INFO);
-        String userId = spUtils.getString(Constants.KEY_USER_ID);
+        String userId = spUtils.getString(Constants.KEY_USER_PHONE);
         String password = spUtils.getString(Constants.KEY_USER_PASSWORD);
         mEtPhone.setText(userId);
         mEtPassword.setText(password);
@@ -125,7 +116,7 @@ public class LoginActivity extends BaseActivity {
                     ToastUtils.showShort("请先勾选同意用户协议");
                     return;
                 }
-                if (RegexUtils.isMobileSimple(mEtPhone.getText())) {
+                if (!RegexUtils.isMobileSimple(mEtPhone.getText().toString())) {
                     ToastUtils.showShort("手机号码格式不正确");
                     return;
                 }
@@ -145,6 +136,10 @@ public class LoginActivity extends BaseActivity {
                                 ToastUtils.showShort("登录失败");
                             } else {
                                 ToastUtils.showShort("登陆成功");
+                                SPUtils spUtils = SPUtils.getInstance(Constants.SP_USER_INFO);
+                                spUtils.put(Constants.KEY_USER_PHONE, phone);
+                                spUtils.put(Constants.KEY_USER_PASSWORD, password);
+
                                 bundle.putSerializable("userInfo", loginBean.getUserInfo());
                                 startActivity(HomeActivity.class, bundle);
                                 finish();
@@ -152,6 +147,10 @@ public class LoginActivity extends BaseActivity {
                         }
                     } else {
                         ToastUtils.showShort("登陆成功");
+                        SPUtils spUtils = SPUtils.getInstance(Constants.SP_USER_INFO);
+                        spUtils.put(Constants.KEY_USER_PHONE, phone);
+                        spUtils.put(Constants.KEY_USER_PASSWORD, password);
+
                         bundle.putSerializable("userInfo", loginBean.getUserInfo());
                         startActivity(HomeActivity.class, bundle);
                         finish();

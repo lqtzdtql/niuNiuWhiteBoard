@@ -6,7 +6,6 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.LinearLayout;
@@ -18,17 +17,15 @@ import com.liuyue.painter.callback.ColorChangeCall;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ColorPalette extends LinearLayout {
-    GridView mGridview;
-    Context mContext;
-    ColorChangeCall mCall;
+    private GridView mGridview;
+    private Context mContext;
+    private ColorChangeCall mCall;
 
     public ColorPalette(Context context) {
-
         this(context, null);
     }
 
     public ColorPalette(Context context, AttributeSet attrs) {
-
         this(context, attrs, 0);
     }
 
@@ -36,7 +33,6 @@ public class ColorPalette extends LinearLayout {
         super(context, attrs, defStyleAttr);
         this.mContext = context;
         LayoutInflater.from(context).inflate(R.layout.color_palette, this);
-        // 相关组件绑定设计
         initView();
         initEvent();
     }
@@ -46,12 +42,8 @@ public class ColorPalette extends LinearLayout {
     }
 
     private void initEvent() {
-        mGridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // todo 回调使颜色改变
-                mCall.callByColorChange(Constants.colors[position]);
-            }
+        mGridview.setOnItemClickListener((parent, view, position, id) -> {
+            mCall.callByColorChange(Constants.colors[position]);
         });
     }
 
@@ -79,20 +71,20 @@ public class ColorPalette extends LinearLayout {
                 if (convertView == null) {
                     convertView = LayoutInflater.from(mContext).inflate(R.layout.color_palette_item, null);
                     holder = new ViewHolder();
-                    holder.iv = (CircleImageView) convertView.findViewById(R.id.id_color_item);
+                    holder.mCircleImageView = (CircleImageView) convertView.findViewById(R.id.id_color_item);
                     convertView.setTag(holder);
                 } else {
                     holder = (ViewHolder) convertView.getTag();
                 }
-                holder.iv.setBorderColor(Color.parseColor(Constants.colors[position]));
+                holder.mCircleImageView.setBorderColor(Color.parseColor(Constants.colors[position]));
                 return convertView;
             }
         });
 
     }
 
-    static class ViewHolder {
-        CircleImageView iv;
+    public static class ViewHolder {
+        CircleImageView mCircleImageView;
     }
 }
 

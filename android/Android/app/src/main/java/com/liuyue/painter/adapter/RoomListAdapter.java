@@ -44,6 +44,7 @@ public class RoomListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         MyViewHolder myViewHolder = (MyViewHolder) holder;
         HallBean.RoomlistBean roomInfo = mDataList.get(position);
         myViewHolder.mTvRoomName.setText(roomInfo.getName());
+        myViewHolder.mTvHost.setText(roomInfo.getHostName());
         myViewHolder.itemView.setOnClickListener(v -> {
             if (mOnClickListener != null) {
                 mOnClickListener.onClick(roomInfo.getUuid());

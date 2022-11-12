@@ -4,7 +4,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!--title-->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="50dp">
@@ -25,7 +24,7 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="5dp"
-            android:background="@drawable/ic_more_dark"></ImageView>
+            android:background="@drawable/ic_more_dark" />
 
         <ImageView
             android:id="@+id/id_redo_btn"
@@ -46,17 +45,16 @@
             android:background="@drawable/ic_undo" />
     </RelativeLayout>
 
-    <!--body-->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.liuyue.painter.view.MyCanvas
+        <com.liuyue.painter.view.ArtBoard
             android:id="@+id/id_paint_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        </com.liuyue.painter.view.MyCanvas>
+        </com.liuyue.painter.view.ArtBoard>
 
         <LinearLayout
             android:id="@+id/id_choose_layout"
@@ -69,7 +67,6 @@
 
         </LinearLayout>
 
-        <!--foot-->
         <LinearLayout
             android:id="@+id/id_foot_layout"
             android:layout_width="match_parent"
@@ -170,12 +167,11 @@
         </LinearLayout>
 
         <LinearLayout
-
             android:id="@+id/save_menu_layout"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
-            android:background="@color/grey"
+            android:background="@color/secondary_text"
             android:orientation="vertical"
             android:visibility="gone">
 
@@ -185,7 +181,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginRight="10dp"
                 android:gravity="right"
-                android:text="@string/save_as_png"
+                android:text="另存为 png"
                 android:textSize="25sp" />
 
             <TextView
@@ -194,7 +190,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginRight="10dp"
                 android:gravity="right"
-                android:text="@string/save_as_svg"
+                android:text="另存为 svg"
                 android:textSize="25sp" />
         </LinearLayout>
 

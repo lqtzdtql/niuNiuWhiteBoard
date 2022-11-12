@@ -46,7 +46,7 @@ public class XmlOperation {
             Element shape = root.addElement("PaintShape");// 创建Shape对象对应节点
 
             Element kind = shape.addElement("Kind");// shape对象的kind节点
-            kind.setText(String.valueOf(shapeList.get(i).GetKind()));
+            kind.setText(String.valueOf(shapeList.get(i).getKind()));
 
             Element color = shape.addElement("Color");// Shape对象的color节点
             color.setText(shapeList.get(i).getColor());
@@ -127,18 +127,8 @@ public class XmlOperation {
      * @param root 还未使用
      */
     private static void listNodes(Element root) {
-        System.out.println("当前节点的名称：" + root.getName());
         // 首先获取当前节点的所有属性节点
         List<Attribute> list = root.attributes();
-        // 遍历属性节点
-        for (Attribute attribute : list) {
-            System.out.println("属性" + attribute.getName() + ":" + attribute.getValue());
-
-        }
-        // 如果当前节点内容不为空，则输出
-        if (!(root.getTextTrim().equals(""))) {
-            System.out.println(root.getName() + "：" + root.getText());
-        }
         // 同时迭代当前节点下面的所有子节点
         // 使用递归
         Iterator<Element> iterator = root.elementIterator();
@@ -178,7 +168,6 @@ public class XmlOperation {
         for (int j = 0; j < pointList.size(); j++) {
             sb.append(pointList.get(j).getX() + "," + pointList.get(j).getY() + ";");
         }
-        // System.out.println(sb.toString());
         return sb.toString();
     }
 

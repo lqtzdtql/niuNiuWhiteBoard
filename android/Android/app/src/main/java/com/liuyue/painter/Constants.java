@@ -1,19 +1,26 @@
 package com.liuyue.painter;
 
-import java.util.HashMap;
-
 public class Constants {
     public static final String SP_USER_INFO = "USER_INFO";
 
-    public static final String KEY_USER_ID = "USER_ID";
+    public static final String KEY_USER_PHONE = "USER_PHONE";
     public static final String KEY_USER_PASSWORD = "USER_PASSWORD";
 
     /**
      * ======================================== 绘图相关 ============================================
      */
 
-    public static final int maxBrushSize = 20; // 画笔最大
-    public static final int minBrushSize = 5; // 画笔最小
+    /**
+     * 画笔最大
+     */
+    public static final int maxBrushSize = 20;
+    /**
+     * 画笔最小
+     */
+    public static final int minBrushSize = 5;
+    /**
+     * 画笔预设颜色
+     */
     public static final String[] colors = new String[]{
             "#242424",
             "#FF0000",
@@ -25,20 +32,38 @@ public class Constants {
             "#836FFF",
             "#CDCDB4",
             "#FF7F24"
-
     };
 
-    final HashMap<Integer, String> colormap = new HashMap<>();
+    /**
+     * 曲线笔迹
+     */
+    public static final int INK = 1;
+    /**
+     * 直线
+     */
+    public static final int LINE = 2;
+    /**
+     * 矩阵
+     */
+    public static final int RECT = 3;
+    /**
+     * 圆
+     */
+    public static final int CIRCLE = 4;
 
-    public static final int INK = 1;// 曲线笔迹
-    public static final int LINE = 2;// 直线
-    public static final int RECT = 3;// 矩阵
-    public static final int CIRCLE = 4;// 圆
+    /**
+     * 退出信号
+     */
+    public static final int MSG_EXIT = 0X111;
 
-    public static final int MSG_EXIT = 0X111;// 退出信号
-
+    /**
+     * 保存格式
+     */
     public static final int PNG = 5;
     public static final int SVG = 6;
 
-    public static final int MSG_REDRAW = 0X112;// 重绘信号
+    /**
+     * 重绘信号
+     */
+    public static final int MSG_REDRAW = 0X112;
 }

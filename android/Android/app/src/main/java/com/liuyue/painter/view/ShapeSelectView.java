@@ -11,20 +11,19 @@ import com.liuyue.painter.Constants;
 import com.liuyue.painter.R;
 
 public class ShapeSelectView extends LinearLayout implements View.OnClickListener {
-
-    // 默认选择的是曲线
-    public static int kind;
-    private final Context mContext;
-    ImageView mSelectInkBtn;
-    ImageView mSelectLineBtn;
-    ImageView mSelectRectBtn;
-    ImageView mSelectCircleBtn;
+    /**
+     * 默认选择的是曲线
+     */
+    private int mKind;
+    private ImageView mSelectInkBtn;
+    private ImageView mSelectLineBtn;
+    private ImageView mSelectRectBtn;
+    private ImageView mSelectCircleBtn;
     private KindBtnClickedListener mKindBtnClickedListener;
 
     public ShapeSelectView(Context context) {
         this(context, null);
     }
-
 
     public ShapeSelectView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -32,18 +31,17 @@ public class ShapeSelectView extends LinearLayout implements View.OnClickListene
 
     public ShapeSelectView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        this.mContext = context;
-        LayoutInflater.from(mContext).inflate(R.layout.shape_palette, this);
+        LayoutInflater.from(context).inflate(R.layout.shape_palette, this);
         initView();
         initEvent();
     }
 
-    public static int getKind() {
-        return kind;
+    public int getKind() {
+        return mKind;
     }
 
-    public static void setKind(int kind) {
-        ShapeSelectView.kind = kind;
+    public void setKind(int kind) {
+        mKind = kind;
     }
 
     private void initView() {
@@ -75,9 +73,11 @@ public class ShapeSelectView extends LinearLayout implements View.OnClickListene
             case R.id.id_select_circle:
                 setKind(Constants.CIRCLE);
                 break;
+            default:
+                break;
         }
         if (mKindBtnClickedListener != null) {
-            mKindBtnClickedListener.onKindBtnClicked(kind);
+            mKindBtnClickedListener.onKindBtnClicked(mKind);
         }
     }
 

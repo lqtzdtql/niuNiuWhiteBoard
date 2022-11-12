@@ -8,11 +8,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Shape {
-
-    String color; // 颜色
-    float width; // 宽度
-    List<Point> pointList; // 笔迹上点集合
-    Paint paint;
+    /**
+     * 颜色
+     */
+    protected String color;
+    /**
+     * 宽度
+     */
+    protected float width;
+    /**
+     * 笔迹上点集合
+     */
+    protected List<Point> pointList;
+    /**
+     * 画笔
+     */
+    protected final Paint paint;
 
     public Shape() {
         pointList = new ArrayList<>();
@@ -68,22 +79,22 @@ public abstract class Shape {
     /**
      * 按下操作对应的相关处理
      */
-    public abstract void DownAction(float x, float y);
+    public abstract void downAction(float x, float y);
 
     /**
      * 移动过程中相关操作
      */
-    public abstract void MoveAction(float mx, float my, float x, float y);
+    public abstract void moveAction(float mx, float my, float x, float y);
 
     /**
      * 抬起操作对应的相关处理
      */
-    public abstract void UpAction(float x, float y);
+    public abstract void upAction(float x, float y);
 
     /**
      * 返回自己对应种类
      */
-    public abstract int GetKind();
+    public abstract int getKind();
 
     /**
      * 设置自己特有属性
@@ -112,19 +123,18 @@ public abstract class Shape {
                 miny = pointList.get(i).getY();
             }
         }
-        System.out.println(minx + "----" + maxy + "----" + maxx + "------" + miny);
         return new RectF(minx, maxy, maxx, miny);
     }
 
     /**
      * 判断是否相交并返回对应的list的位置
      */
-    public abstract boolean IsInterSect(float lastx, float lasty, float x, float y);
+    public abstract boolean isInterSect(float lastx, float lasty, float x, float y);
 
     /**
      * 判断是否进入边缘矩形
      */
-    public boolean IsEnterShapeEdge(float x, float y) {
+    public boolean isEnterShapeEdge(float x, float y) {
         float minx = pointList.get(0).getX();
         float miny = pointList.get(0).getY();
         float maxx = pointList.get(0).getX();

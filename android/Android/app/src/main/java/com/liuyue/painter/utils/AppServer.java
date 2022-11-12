@@ -1,5 +1,7 @@
 package com.liuyue.painter.utils;
 
+import android.util.Log;
+
 import com.google.gson.JsonObject;
 import com.liuyue.painter.model.CreateRoomBean;
 import com.liuyue.painter.model.HallBean;
@@ -16,14 +18,14 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class AppServer {
-    private static final String SERVER_ADDRESS = "";
+    private static final String SERVER_ADDRESS = "http://81.68.68.216:8282";
     private static final String MEDIA_TYPE_JSON = "application/json";
 
-    private OkHttpClient mOkHttpClient;
+    private final OkHttpClient mOkHttpClient;
     private String mToken;
 
     private static class AppServerHolder {
-        private static final AppServer instance = new AppServer();
+        private static final AppServer INSTANCE = new AppServer();
     }
 
     private AppServer() {
@@ -31,7 +33,7 @@ public class AppServer {
     }
 
     public static AppServer getInstance() {
-        return AppServerHolder.instance;
+        return AppServerHolder.INSTANCE;
     }
 
     public LoginBean login(String phone, String password) {
@@ -46,9 +48,10 @@ public class AppServer {
             if (response.code() != 200) {
                 return null;
             }
-            mToken = response.header("Refresh_token");
+            mToken = response.header("Refresh-token");
             return LoginBean.parse(response.body().string());
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -68,6 +71,7 @@ public class AppServer {
             }
             return SignupBean.parse(response.body().string());
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -77,7 +81,7 @@ public class AppServer {
         Request request = new Request.Builder()
                 .url(url)
                 .method("GET", null)
-                .addHeader("Access_Token", mToken)
+                .addHeader("Access-Token", mToken)
                 .build();
         try {
             Response response = mOkHttpClient.newCall(request).execute();
@@ -95,7 +99,7 @@ public class AppServer {
         Request request = new Request.Builder()
                 .url(url)
                 .method("GET", null)
-                .addHeader("Access_Token", mToken)
+                .addHeader("Access-Token", mToken)
                 .build();
         try {
             Response response = mOkHttpClient.newCall(request).execute();
@@ -117,11 +121,12 @@ public class AppServer {
         Request request = new Request.Builder()
                 .url(url)
                 .method("POST", requestBody)
-                .addHeader("Access_Token", mToken)
+                .addHeader("Access-Token", mToken)
                 .build();
         try {
             Response response = mOkHttpClient.newCall(request).execute();
             if (response.code() != 200) {
+                Log.e("飞", "createRoom: "+response.body().string());
                 return null;
             }
             return CreateRoomBean.parse(response.body().string());
@@ -135,7 +140,7 @@ public class AppServer {
         Request request = new Request.Builder()
                 .url(url)
                 .method("GET", null)
-                .addHeader("Access_Token", mToken)
+                .addHeader("Access-Token", mToken)
                 .build();
         try {
             Response response = mOkHttpClient.newCall(request).execute();
@@ -153,7 +158,7 @@ public class AppServer {
         Request request = new Request.Builder()
                 .url(url)
                 .method("GET", null)
-                .addHeader("Access_Token", mToken)
+                .addHeader("Access-Token", mToken)
                 .build();
         try {
             Response response = mOkHttpClient.newCall(request).execute();
@@ -168,7 +173,7 @@ public class AppServer {
         Request request = new Request.Builder()
                 .url(url)
                 .method("GET", null)
-                .addHeader("Access_Token", mToken)
+                .addHeader("Access-Token", mToken)
                 .build();
         try {
             Response response = mOkHttpClient.newCall(request).execute();

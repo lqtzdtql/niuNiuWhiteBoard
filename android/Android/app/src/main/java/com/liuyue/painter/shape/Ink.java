@@ -9,7 +9,7 @@ import com.liuyue.painter.utils.InterSectUtil;
 import java.util.List;
 
 public class Ink extends Shape {
-    Path path;
+    private Path path;
 
     public Ink() {
         path = new Path();
@@ -18,7 +18,6 @@ public class Ink extends Shape {
     public Path getPath() {
         return path;
     }
-
 
     public void setPath(Path path) {
         this.path = path;
@@ -49,45 +48,45 @@ public class Ink extends Shape {
     }
 
     @Override
-    public void DownAction(float x, float y) {
+    public void downAction(float x, float y) {
         path.moveTo(x, y);
     }
 
     @Override
-    public void MoveAction(float mx, float my, float x, float y) {
+    public void moveAction(float mx, float my, float x, float y) {
         path.quadTo(mx, my, (x + mx) / 2, (y + my) / 2);
         // 保存点
         addPoint(x, y);
     }
 
     @Override
-    public void UpAction(float x, float y) {
+    public void upAction(float x, float y) {
         path.lineTo(x, y);
     }
 
     @Override
-    public int GetKind() {
+    public int getKind() {
         return Constants.INK;
     }
 
     @Override
     public void setOwnProperty() {
-        Path newpath = new Path();
-        newpath.moveTo(pointList.get(0).getX(), pointList.get(0).getY());
+        Path newPath = new Path();
+        newPath.moveTo(pointList.get(0).getX(), pointList.get(0).getY());
         int j;
         for (j = 1; j < pointList.size() - 1; j++) {
-            newpath.quadTo(
+            newPath.quadTo(
                     pointList.get(j - 1).getX(),
                     pointList.get(j - 1).getY(),
                     (pointList.get(j).getX() + pointList.get(j - 1).getX()) / 2,
                     (pointList.get(j).getY() + pointList.get(j - 1).getY()) / 2);
         }
-        newpath.lineTo(pointList.get(j).getX(), pointList.get(j).getY());
-        setPath(newpath);
+        newPath.lineTo(pointList.get(j).getX(), pointList.get(j).getY());
+        setPath(newPath);
     }
 
     @Override
-    public boolean IsInterSect(float lastx, float lasty, float x, float y) {
+    public boolean isInterSect(float lastx, float lasty, float x, float y) {
         for (int i = 1; i < pointList.size(); i++) {
             if (new InterSectUtil(new Point(lastx, lasty), new Point(x, y), pointList.get(i - 1), pointList.get(i)).Segment_Intersect()) {
                 return true;

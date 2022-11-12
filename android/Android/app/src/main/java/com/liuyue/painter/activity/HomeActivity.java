@@ -1,5 +1,6 @@
 package com.liuyue.painter.activity;
 
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.View;
 
@@ -43,6 +44,7 @@ public class HomeActivity extends BaseActivity {
             startActivity(RoomActivity.class, bundle);
         });
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mRecyclerView.addItemDecoration(new SpacesItemDecoration(15));
         mRecyclerView.setAdapter(mRoomListAdapter);
     }
 
@@ -71,6 +73,27 @@ public class HomeActivity extends BaseActivity {
     public void onClick(View view) {
         if (view.getId() == R.id.fab) {
             startActivity(CreateRoomActivity.class);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ThreadUtils.getSinglePool().execute(() -> AppServer.getInstance().exitRoom(mUserInfoBean.getUuid()));
+    }
+
+    public static class SpacesItemDecoration extends RecyclerView.ItemDecoration {
+        private final int space;
+
+        public SpacesItemDecoration(int space) {
+            this.space = space;
+        }
+
+        @Override
+        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+            if (parent.getChildAdapterPosition(view) != 0) {
+                outRect.top = space;
+            }
         }
     }
 }

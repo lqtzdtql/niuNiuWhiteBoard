@@ -1,30 +1,30 @@
 package com.liuyue.painter.shape;
 
 public class Point {
-    float x;
-    float y;
+    private float mX;
+    private float mY;
 
     public Point() {
     }
 
     public Point(float x, float y) {
-        this.x = x;
-        this.y = y;
+        this.mX = x;
+        this.mY = y;
     }
 
     public float getX() {
-        return x;
+        return mX;
     }
 
     public float getY() {
-        return y;
+        return mY;
     }
 
     public void setX(float x) {
-        this.x = x;
+        this.mX = x;
     }
 
     public void setY(float y) {
-        this.y = y;
+        this.mY = y;
     }
 }

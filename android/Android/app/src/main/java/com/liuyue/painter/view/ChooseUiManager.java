@@ -6,20 +6,19 @@ import android.widget.SeekBar;
 
 import com.liuyue.painter.Constants;
 import com.liuyue.painter.callback.ColorCallBack;
-import com.liuyue.painter.callback.ColorChangeCall;
 import com.liuyue.painter.callback.PageChangeCall;
 import com.liuyue.painter.callback.ShapeChangeCall;
 import com.liuyue.painter.callback.SizeChangeCall;
 
-public class ChooseUiManager {
-    Context mContext;
-    LinearLayout mView;
-    SizeChangeCall mCall;
-    ColorCallBack colorCallback;
-    ShapeChangeCall shapeChangeCall;
-    PageChangeCall pageChangeCall;
+public class ChooseUIManager {
+    private final Context mContext;
+    private final LinearLayout mView;
+    private SizeChangeCall mCall;
+    private ColorCallBack mColorCallBack;
+    private ShapeChangeCall mShapeChangeCall;
+    private PageChangeCall mPageChangeCall;
 
-    public ChooseUiManager(Context context, LinearLayout layout) {
+    public ChooseUIManager(Context context, LinearLayout layout) {
         this.mContext = context;
         this.mView = layout;
     }
@@ -72,7 +71,7 @@ public class ChooseUiManager {
      * @param back
      */
     public void setColorCallBack(ColorCallBack back) {
-        this.colorCallback = back;
+        this.mColorCallBack = back;
     }
 
     /**
@@ -83,12 +82,9 @@ public class ChooseUiManager {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(30, 30, 10, 40);
         mView.addView(cp, lp);
-        cp.setColorChangeCall(new ColorChangeCall() {
-            @Override
-            public void callByColorChange(String color) {
-                // 将选中的值作为画笔的颜色
-                colorCallback.setChangeColor(color);
-            }
+        cp.setColorChangeCall(color -> {
+            // 将选中的值作为画笔的颜色
+            mColorCallBack.setChangeColor(color);
         });
     }
 
@@ -98,29 +94,24 @@ public class ChooseUiManager {
      * @param back
      */
     public void setShapeChangeCall(ShapeChangeCall back) {
-        this.shapeChangeCall = back;
+        this.mShapeChangeCall = back;
     }
 
     /**
      * 显示图形绘制选择组件
      */
     public void ShowShapeUi(int currentkind) {
-        ShapeSelectView sv = new ShapeSelectView(mContext);
+        ShapeSelectView shapeSelectView = new ShapeSelectView(mContext);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(30, 30, 10, 30);
-        mView.addView(sv, lp);
-        ShapeSelectView.setKind(currentkind);
-        sv.setKindBtnClickedListener(new ShapeSelectView.KindBtnClickedListener() {
-            @Override
-            public void onKindBtnClicked(int kind) {
-                shapeChangeCall.CallByShapeChange(kind);
-            }
-        });
+        mView.addView(shapeSelectView, lp);
+        shapeSelectView.setKind(currentkind);
+        shapeSelectView.setKindBtnClickedListener(kind -> mShapeChangeCall.CallByShapeChange(kind));
 
     }
 
     public void setPageChangeCall(PageChangeCall back) {
-        this.pageChangeCall = back;
+        this.mPageChangeCall = back;
     }
 
     /**
@@ -131,23 +122,22 @@ public class ChooseUiManager {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.setMargins(30, 30, 10, 30);
         mView.addView(pv, lp);
-        pv.setPagenum(currentpagenum);
-        pv.setPageindex(currentpageindex);
+        pv.setPageNum(currentpagenum);
+        pv.setPageIndex(currentpageindex);
         pv.SetPageComponentClickListener(new PageSelectView.PageComponentClickListener() {
             @Override
             public void AddPageClicked(int pagenum, int pageindex) {
-                pageChangeCall.PageAddCall(pagenum, pageindex);
+                mPageChangeCall.PageAddCall(pagenum, pageindex);
             }
 
             @Override
             public void PrePageClicked(int pageindex) {
-
-                pageChangeCall.PagePreCall(pageindex);
+                mPageChangeCall.PagePreCall(pageindex);
             }
 
             @Override
             public void NextPageClicked(int pageindex) {
-                pageChangeCall.PageNextCall(pageindex);
+                mPageChangeCall.PageNextCall(pageindex);
             }
         });
     }

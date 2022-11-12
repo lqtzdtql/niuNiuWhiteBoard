@@ -6,64 +6,68 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Gallery {
-    private String name;// 画册名
-    private int num;
-    private List<List<Shape>> PaintingList;
-
-    private List<Bitmap> BitmapList; // 缩略图集合
+    /**
+     * 画册名
+     */
+    private String mName;
+    private int mNum;
+    private List<List<Shape>> mPaintingList;
+    /**
+     * 缩略图集合
+     */
+    private List<Bitmap> mBitmapList;
 
     public Gallery() {
-        PaintingList = new ArrayList<>();
-        BitmapList = new ArrayList<>();
-        num = 0;
+        mPaintingList = new ArrayList<>();
+        mBitmapList = new ArrayList<>();
+        mNum = 0;
     }
 
-
     public String getName() {
-        return name;
+        return mName;
     }
 
     public int getNum() {
-        return num;
+        return mNum;
     }
 
     public List<List<Shape>> getPaintingList() {
-        return PaintingList;
+        return mPaintingList;
     }
 
     public void setPaintingList(List<List<Shape>> paintingList) {
-        PaintingList = paintingList;
+        mPaintingList = paintingList;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.mName = name;
     }
 
     public void setNum(int num) {
-        this.num = num;
+        this.mNum = num;
     }
 
     public List<Bitmap> getBitmapList() {
-        return BitmapList;
+        return mBitmapList;
     }
 
     public void setBitmapList(List<Bitmap> bitmapList) {
-        BitmapList = bitmapList;
+        mBitmapList = bitmapList;
     }
 
     public void AddPainting(List<Shape> painting, Bitmap bitmap) {
         List<Shape> shapes = new ArrayList<>();
         shapes.addAll(painting);
-        PaintingList.add(shapes);
+        mPaintingList.add(shapes);
         Bitmap bitmapobject = Bitmap.createBitmap(bitmap);
-        BitmapList.add(bitmapobject);
-        num++;
+        mBitmapList.add(bitmapobject);
+        mNum++;
     }
 
     public void CoverPainting(List<Shape> painting, Bitmap bitmap, int position) {
         List<Shape> shapes = new ArrayList<>();
         shapes.addAll(painting);
-        PaintingList.set(position, shapes);
-        BitmapList.set(position, bitmap);
+        mPaintingList.set(position, shapes);
+        mBitmapList.set(position, bitmap);
     }
 }
