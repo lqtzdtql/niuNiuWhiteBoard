@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"niuNiuSDKBackend/common/log"
 	"niuNiuSDKBackend/config"
@@ -17,7 +18,8 @@ func main() {
 
 	newRouter := service.NewRouter()
 
-	go server.MyServer.Start()
+	ctx := context.Background()
+	go server.MyServer.Start(ctx)
 
 	s := &http.Server{
 		Addr:           ":8888",

@@ -43,7 +43,6 @@ func Auth(c *gin.Context) {
 	participant := models.Participant{
 		Name: clientClaims.UserName,
 	}
-
 	has, err = database.MEngine.Table(models.ParticipantTable).Exist(&participant)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
@@ -70,7 +69,7 @@ func Auth(c *gin.Context) {
 		if participant.Permission == models.PermissionHost {
 			room.UUID = ulid.Make().String()
 			room.HostUUID = participant.UUID
-			if _, err := database.MEngine.Table(models.RoomTable).Insert(room); err != nil {
+			if _, err := database.MEngine.Table(models.RoomTable).Insert(&room); err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 				log.Logger.Error("build room failed", log.Any("build room failed", err.Error()))
 				return

@@ -13,6 +13,7 @@ import (
 const (
 	RoomTable        = "rooms"
 	ParticipantTable = "participants"
+	WhiteBoardTable  = "whiteBoards"
 )
 
 type Room struct {
