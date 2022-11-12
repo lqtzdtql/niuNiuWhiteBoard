@@ -335,7 +335,8 @@ export class Canvas extends EventCenter {
   }
 
   addAnimate(target: FabricObject) {
-    const props = {};
+    const props = target.animateEnd;
+    const animateOptions =;
     target.animate();
   }
   /** 处理鼠标 hover 事件和物体变换时的拖拽事件
@@ -1051,19 +1052,24 @@ export class Canvas extends EventCenter {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
-      this.contextTop.beginPath();
       if (end.x >= start.x) {
+        this.contextTop.beginPath();
         this.contextTop.moveTo(start.x, start.y);
         this.contextTop.lineTo(end.x - this.brush.headlen, start.y);
+        this.contextTop.beginPath();
         this.contextTop.moveTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
         this.contextTop.lineTo(end.x - this.brush.headlen, start.y - this.brush.headlen);
+        this.contextTop.LineTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
       } else {
+        this.contextTop.beginPath();
         this.contextTop.moveTo(start.x, start.y);
         this.contextTop.lineTo(end.x + this.brush.headlen, start.y);
+        this.contextTop.beginPath();
         this.contextTop.moveTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
         this.contextTop.lineTo(end.x + this.brush.headlen, start.y - this.brush.headlen);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
       }
       this.contextTop.closePath();
       this.contextTop.stroke();
