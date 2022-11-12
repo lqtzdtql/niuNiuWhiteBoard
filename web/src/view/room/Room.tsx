@@ -5,7 +5,7 @@ import { IUserInfo } from '@Src/service/login/ILoginService';
 import { getWhiteBoardToken } from '@Src/service/room/RoomService';
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Sider } from './Sider';
+import { Main } from './Main';
 import './style/Room.less';
 import { Title } from './Title';
 
@@ -32,10 +32,7 @@ const Room = () => {
   return (
     <div className="room-box">
       <Title roomInfo={roomInfo} userInfo={userInfo} />
-      <div className="room-main">
-        <Sider />
-        <canvas id="whiteboard" className="room-content" />
-      </div>
+      <Main />
     </div>
   );
 };
