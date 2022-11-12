@@ -108,6 +108,9 @@ export class Room extends EventCenter {
             this.emit('createCanvas', { canvasId: i });
           }
         }
+      } else if (res.contentType === 12) {
+        const message = JSON.parse(res.content).message;
+        this.emit('customizeMessage', { message });
       }
     });
     this.ws.send(
@@ -142,6 +145,21 @@ export class Room extends EventCenter {
       this.initBindCanvasEvent(canvas);
       this.canvasMap.set(param.canvasId, canvas);
     });
+    this.on('customizeSend', (param: { content: string }) => {
+      this.ws.send(
+        JSON.stringify({
+          from: this.userId,
+          toRoom: this.roomId,
+          contentType: 12,
+          content: param.content,
+        }),
+      );
+    });
+  }
+
+  sendMessageToAll(message: any) {
+    const content = JSON.stringify({ message });
+    this.emit('customizeSend', { content });
   }
 
   addHeartBeat() {
@@ -296,8 +314,7 @@ export class Room extends EventCenter {
     return this.canvasMap.get(canvasId);
   }
 
-  modifyOnlyRead(canvasId: string) {
-    if (!this.canvasMap.has(canvasId)) return;
+  modifyOnlyRead() {
     if (this.onlyRead) {
       this.canvasMap.forEach((value) => {
         value.onlyRead = false;
@@ -310,7 +327,7 @@ export class Room extends EventCenter {
         JSON.stringify({
           from: this.userId,
           toRoom: this.roomId,
-          toWhiteBoard: canvasId,
+          toWhiteBoard: this.currentCanvasId,
           onlyRead: true,
           contentType: 6,
         }),

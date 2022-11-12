@@ -51,7 +51,7 @@ export class Util {
   }
   static animate(options: IAnimationOption) {
     window.requestAnimationFrame((timestamp: number) => {
-      let start = timestamp || +new Date(), // 开始时间
+      let start = timestamp + options.startTime || +new Date(), // 开始时间
         duration = options.duration || 500, // 动画时间
         finish = start + duration, // 结束时间
         time, // 当前时间
@@ -66,15 +66,18 @@ export class Util {
         // tick 的主要任务就是根据时间更新值
         time = ticktime || +new Date();
         let currentTime = time > finish ? duration : time - start; // 当前已经执行了多久时间（介于0~duration）
-        if (abort()) {
-          options.onComplete && options.onComplete();
-          return;
+        if (currentTime >= 0) {
+          if (abort()) {
+            options.onComplete && options.onComplete();
+            return;
+          }
+          onChange(easing(currentTime, startValue, byValue, duration)); // 其实 animate 函数只是根据 easing 函数计算出了某个值，然后传给调用者而已
+          if (time > finish) {
+            options.onComplete && options.onComplete();
+            return;
+          }
         }
-        onChange(easing(currentTime, startValue, byValue, duration)); // 其实 animate 函数只是根据 easing 函数计算出了某个值，然后传给调用者而已
-        if (time > finish) {
-          options.onComplete && options.onComplete();
-          return;
-        }
+
         window.requestAnimationFrame(tick);
       }
 

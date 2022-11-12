@@ -575,6 +575,7 @@ export class FabricObject extends EventCenter {
     }
 
     Util.animate({
+      startTime: options.startTime || 0,
       startValue: options.from,
       endValue: to,
       byValue: options.by,

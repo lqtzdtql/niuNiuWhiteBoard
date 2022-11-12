@@ -123,6 +123,7 @@ export interface IAnimationOption {
   onComplete?: Function;
   /** 缓动函数 */
   easing?: Function;
+  startTime?: number;
   /** 执行时间 ms */
   duration?: number;
   abort?: Function;
