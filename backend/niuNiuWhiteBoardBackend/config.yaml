@@ -21,9 +21,9 @@ dbConfig:
   maxIdle: 10
   maxOpen: 200
 qiniuService:
-  accessKey: UKxFwgBIB-2XNAb3gRZiicO09ZrlZqGTn3wfho_x
-  secretKey: IwHAY5Wkkd42i8JTBQ7BFjx9CpTyAXst5x0ImTqF
-  rtcAppId: gqo29t6e5
+  accessKey:
+  secretKey:
+  rtcAppId:
 whiteboard:
   ak: hpTBCFkXHjyZjktpyaFa6PIE2LCqItrUG8bwJiuXjssi35WdSujxJiiHjw8XOKnt
 
