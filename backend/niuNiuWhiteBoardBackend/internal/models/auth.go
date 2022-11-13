@@ -44,8 +44,6 @@ func Auth(c *gin.Context) {
 			log.Logger.Error("login failed", log.Any("login failed", err.Error()))
 			return
 		}
-		c.Next()
-		return
 	}
 	c.Next()
 	return

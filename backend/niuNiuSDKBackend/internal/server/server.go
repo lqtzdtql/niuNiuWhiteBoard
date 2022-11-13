@@ -3,13 +3,15 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-redis/redis/v8"
-	"github.com/oklog/ulid/v2"
+	"sync"
+	"time"
+
 	"niuNiuSDKBackend/common/database"
 	"niuNiuSDKBackend/common/log"
 	"niuNiuSDKBackend/internal/models"
-	"sync"
-	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/oklog/ulid/v2"
 )
 
 var MyServer = NewServer()
@@ -34,28 +36,39 @@ func NewServer() *Server {
 
 // 消息类型
 const (
-	HeartbeatCheckTime = 500 // 心跳检测几秒检测一次
-	HeartbeatTime      = 10  // 心跳距离上一次的最大时间
+	HeartbeatCheckTime = 1  // 心跳检测几秒检测一次
+	HeartbeatTime      = 10 // 心跳距离上一次的最大时间
 )
 
 // 维持心跳
 func (s *Server) heartbeat(ctx context.Context) {
 	for {
+		clients := make([]*Client, 0)
 		// 获取所有的Clients
 		s.mutex.Lock()
-		clients := make([]*Client, len(s.Clients))
 		for _, c := range s.Clients {
 			clients = append(clients, c)
 		}
 		s.mutex.Unlock()
-
 		for _, c := range clients {
 			if time.Now().Unix()-c.HeartbeatTime > HeartbeatTime {
-				log.Logger.Info("loginout", log.Any("loginout", c.UUID))
-				s.UnRegister <- c
+				log.Logger.Info("loginoutll", log.Any("loginoutll", c.UUID))
+				user := ExitRoom(c)
+				msg := &models.LeaveEnterRoomRes{
+					ContentType: models.LEAVE_ROOM,
+					UserName:    user.Name,
+				}
+				message, _ := json.Marshal(msg)
+				for _, c := range clients {
+					if c.UUID != c.UUID {
+						c.Send <- message
+					}
+				}
+				c.Conn.Close()
+				delete(s.Clients, c.UUID)
 			}
 		}
-		time.Sleep(time.Millisecond * HeartbeatCheckTime)
+		time.Sleep(time.Second * HeartbeatCheckTime)
 	}
 }
 
@@ -65,54 +78,33 @@ func (s *Server) register(ctx context.Context) {
 		select {
 		case conn := <-s.Register:
 			//时机：进房后开始
-			log.Logger.Info("login", log.Any("login", "new user login in"+conn.UUID))
+			log.Logger.Info("login", log.Any("login", conn.UUID))
 			s.Clients[conn.UUID] = conn
-			//进房后发个心跳类型给client
-			msg := &models.HeatBeatRes{
-				ContentType: models.HEAT_BEAT,
-			}
-			message, _ := json.Marshal(msg)
-			conn.Send <- message
-		case conn := <-s.UnRegister:
-			user := &models.Participant{}
-			//广播用户退出的消息
-			if _, err := database.MEngine.Table(models.ParticipantTable).Where("Uuid = ? ", conn.UUID).Get(&user); err != nil {
+			user := models.Participant{}
+			if _, err := database.MEngine.Table(models.ParticipantTable).Where("uuid = ? ", conn.UUID).Get(&user); err != nil {
 				log.Logger.Error("get participant info failed", log.Any("get participant info failed", err.Error()))
 			}
+			//进房后广播有人进入房间
+			msg := &models.LeaveEnterRoomRes{
+				ContentType: models.ENTER_ROOM,
+				UserName:    user.Name,
+			}
+
 			s.mutex.Lock()
-			clients := make([]*Client, len(s.Clients))
+			clients := make([]*Client, 0)
 			for _, c := range s.Clients {
 				clients = append(clients, c)
 			}
 			s.mutex.Unlock()
-			msg := &models.LeaveRoomRes{
-				ContentType: models.LEAVE_ROOM,
-				LeaveUser:   user.Name,
-			}
-			message, _ := json.Marshal(msg)
 
+			message, _ := json.Marshal(msg)
 			for _, c := range clients {
 				if c.UUID != conn.UUID {
 					c.Send <- message
 				}
 			}
-
+		case conn := <-s.UnRegister:
 			log.Logger.Info("loginout", log.Any("loginout", conn.UUID))
-			if _, ok := s.Clients[conn.UUID]; ok {
-				_, err := database.MEngine.Table(models.ParticipantTable).Where("user_uuid = ? AND room_uuid = ?", conn.UUID, conn.UUID).Delete(&user)
-				if err != nil {
-					log.Logger.Error("exit room failed", log.Any("exit room failed", err.Error()))
-				}
-				num, _ := database.MEngine.Table(models.ParticipantTable).Where("room_uuid = ?", conn.UUID).Count(&models.Participant{})
-				if num == 0 {
-					//如果人数为0， 则销毁房间
-					if _, err = database.MEngine.Table(models.RoomTable).Where("uuid = ?", conn.RoomUUID).Delete(&models.Room{}); err != nil {
-						log.Logger.Error("eixt room success, but room not close", log.Any("eixt room success, but room not close", err.Error()))
-					}
-				}
-				close(conn.Send)
-				delete(s.Clients, conn.UUID)
-			}
 		case message := <-s.Broadcast:
 			MessageHandle(ctx, message, s)
 		}
@@ -131,22 +123,42 @@ func (s *Server) Start(ctx context.Context) {
 		s.heartbeat(ctx)
 	}()
 
-	// 注册注销
+	// 登录注销
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Logger.Error("recover", log.Any("recover", r))
-			}
-		}()
+		//defer func() {
+		//	if r := recover(); r != nil {
+		//		log.Logger.Error("recover", log.Any("recover", r))
+		//	}
+		//}()
 		s.register(ctx)
 	}()
+}
+
+func ExitRoom(conn *Client) models.Participant {
+	user := models.Participant{}
+	if _, err := database.MEngine.Table(models.ParticipantTable).Where("uuid = ? ", conn.UUID).Get(&user); err != nil {
+		log.Logger.Error("get participant info failed", log.Any("get participant info failed", err.Error()))
+	}
+	_, err := database.MEngine.Table(models.ParticipantTable).Where("uuid = ? AND room_uuid = ?", conn.UUID, conn.RoomUUID).Delete(&user)
+	if err != nil {
+		log.Logger.Error("exit room failed", log.Any("exit room failed", err.Error()))
+	}
+	num, _ := database.MEngine.Table(models.ParticipantTable).Where("room_uuid = ?", conn.UUID).Count(&models.Participant{})
+	if num == 0 {
+		//如果人数为0， 则销毁房间
+		if _, err = database.MEngine.Table(models.RoomTable).Where("uuid = ?", conn.RoomUUID).Delete(&models.Room{}); err != nil {
+			log.Logger.Error("eixt room success, but room not close", log.Any("eixt room success, but room not close", err.Error()))
+		}
+	}
+	log.Logger.Info("delete", log.Any("delete", conn.UUID))
+	return user
 }
 
 func MessageHandle(ctx context.Context, message []byte, s *Server) {
 	msg := &models.Message{}
 	json.Unmarshal(message, msg)
 	s.mutex.Lock()
-	clients := make([]*Client, len(s.Clients))
+	clients := make([]*Client, 0)
 	for _, c := range s.Clients {
 		clients = append(clients, c)
 	}
@@ -164,14 +176,19 @@ func MessageHandle(ctx context.Context, message []byte, s *Server) {
 	case models.OBJECT_DELETE:
 		objectDelete(ctx, msg, clients)
 	case models.DRAWING_LOCK:
-		drawLock(ctx, msg, s, clients)
+		drawingLock(ctx, msg, s, clients)
 	case models.CREATE_BOARD:
 		createBoard(ctx, msg, clients)
 	case models.CANVAS_LIST:
 		canvasList(ctx, msg, s)
 	case models.LEAVE_ROOM:
 		leaveRoom(ctx, msg, s)
+	case models.CUSTOMIZE_MESSAGE:
+		customize(ctx, msg, clients)
 	default:
+		for _, c := range clients {
+			c.Send <- message
+		}
 	}
 }
 
@@ -198,19 +215,23 @@ func upDateBoard(ctx context.Context, msg *models.Message, s *Server) {
 	}
 	// 查找数据库，找出该白板内的所有图形
 	objectIds, _ := database.Rdb.SMembers(ctx, msg.ToWhiteBoard).Result()
-	var contentString []string
+	var contentString = make([]string, 0)
 	for _, objectId := range objectIds {
+		if objectId == "" {
+			continue
+		}
 		contentAndTime := models.ObjectInRedis{}
 		obj, _ := database.Rdb.Get(ctx, objectId).Result()
 		json.Unmarshal([]byte(obj), &contentAndTime)
-		objContent, _ := json.Marshal(contentAndTime.Content)
-		contentString = append(contentString, string(objContent))
+		contentString = append(contentString, contentAndTime.Content)
 	}
 	content, _ := json.Marshal(contentString)
 	upDateRes.Content = string(content)
 	res, _ := json.Marshal(upDateRes)
-	// 回复给发送该信令的人
+	//回复给发送该信令的人
+	log.Logger.Debug("upDateBoard test msg.From", log.Any("upDateBoard test msg.From", msg.From))
 	s.Clients[msg.From].Send <- res
+
 }
 
 func switchBoard(ctx context.Context, msg *models.Message, s *Server, clients []*Client) {
@@ -220,7 +241,8 @@ func switchBoard(ctx context.Context, msg *models.Message, s *Server, clients []
 	}
 	// 查找数据库，找出该白板内的所有图形
 	objectIds, _ := database.Rdb.SMembers(ctx, msg.ToWhiteBoard).Result()
-	var contentString []string
+	var contentString = make([]string, 0)
+
 	for _, objectId := range objectIds {
 		contentAndTime := models.ObjectInRedis{}
 		obj, _ := database.Rdb.Get(ctx, objectId).Result()
@@ -243,6 +265,7 @@ func switchBoard(ctx context.Context, msg *models.Message, s *Server, clients []
 		Content:      string(content),
 	}
 	res2From, _ := json.Marshal(updateBoardRes)
+	log.Logger.Debug("switchBoard test", log.Any("switchBoard test", res2From))
 	s.Clients[msg.From].Send <- res2From
 }
 
@@ -269,6 +292,7 @@ func objectNew(ctx context.Context, msg *models.Message, clients []*Client) {
 	if err != nil {
 		log.Logger.Error("push objectId to whiteBoard failed", log.Any("push objectId to whiteBoard failed", err.Error()))
 	}
+	log.Logger.Debug("objectNew test", log.Any("objectNew test", res))
 	broadcast(clients, msg, res)
 }
 
@@ -297,8 +321,9 @@ func objectModify(ctx context.Context, msg *models.Message, clients []*Client) {
 		if err != nil {
 			log.Logger.Error("object replace failed", log.Any("object replace failed", err.Error()))
 		}
+		broadcast(clients, msg, res)
+		log.Logger.Debug("objectModify test", log.Any("objectModify test", res))
 	}
-	broadcast(clients, msg, res)
 }
 
 func objectDelete(ctx context.Context, msg *models.Message, clients []*Client) {
@@ -324,10 +349,10 @@ func objectDelete(ctx context.Context, msg *models.Message, clients []*Client) {
 	}
 	res, _ := json.Marshal(objectRes)
 	broadcast(clients, msg, res)
-	log.Logger.Info("object delete success", log.Any("object delete failed", err.Error()))
+	log.Logger.Debug("objectDelete test", log.Any("createBoard test", res))
 }
 
-func drawLock(ctx context.Context, msg *models.Message, s *Server, clients []*Client) {
+func drawingLock(ctx context.Context, msg *models.Message, s *Server, clients []*Client) {
 	if msg.IsLock {
 		_, err := database.Rdb.Get(ctx, msg.ObjectId+"lock").Result()
 		// 检查此时是否已经上锁
@@ -349,6 +374,7 @@ func drawLock(ctx context.Context, msg *models.Message, s *Server, clients []*Cl
 				ToWhiteBoard: msg.ToWhiteBoard,
 			}
 			res2Others, _ := json.Marshal(drawingLock2Others)
+			log.Logger.Debug("drawingLock test not exit lock", log.Any("drawingLock test not exit lock", res2Others))
 			broadcast(clients, msg, res2Others)
 
 		} else if err != nil {
@@ -363,57 +389,104 @@ func drawLock(ctx context.Context, msg *models.Message, s *Server, clients []*Cl
 			}
 			resExitLock2From, _ := json.Marshal(exitLock2From)
 			s.Clients[msg.From].Send <- resExitLock2From
+			log.Logger.Debug("drawingLock test Exit lock", log.Any("drawingLock test not exit lock", resExitLock2From))
 		}
 	} else {
-		// 如果存在，就删除这个锁，如果不存在，就忽略
+		// 如果存在，就删除这个锁，并且向发送者以外的所有人广播解锁，如果不存在，就忽略
 		_, err := database.Rdb.Get(ctx, msg.ObjectId+"lock").Result()
 		if err == redis.Nil {
 			log.Logger.Info("not exit the drawinglock", log.Any("not exit the drawinglock", msg.ObjectId))
 		} else if err != nil {
 			log.Logger.Error("get objectlock failed", log.Any("get objectlock failed", err.Error()))
 		} else {
+			unLock2Others := models.DrawingLockRes{
+				ContentType:  models.DRAWING_LOCK,
+				ObjectId:     msg.ObjectId,
+				IsLock:       false,
+				ToWhiteBoard: msg.ToWhiteBoard,
+			}
+			resUnLock2Others, _ := json.Marshal(unLock2Others)
+			broadcast(clients, msg, resUnLock2Others)
 			err = database.Rdb.Del(ctx, msg.ObjectId+"lock").Err()
 			if err != nil {
 				log.Logger.Error("drawlock delete failed", log.Any("drawinglock delete failed", err.Error()))
 			}
+			log.Logger.Debug("Unlock test", log.Any("Unlock test", resUnLock2Others))
 		}
-
 	}
 }
 
 func createBoard(ctx context.Context, msg *models.Message, clients []*Client) {
 	canvas := models.WhiteBoard{
-		UUID:     ulid.Make().String(),
-		RoomUUID: msg.ToRoom,
+		UUID:        ulid.Make().String(),
+		RoomUUID:    msg.ToRoom,
+		CreatedTime: time.Now(),
+		UpdatedTime: time.Now(),
 	}
 	//白板table中添加记录，给房间内所有用户广播白板id
 	if _, err := database.MEngine.Table(models.WhiteBoardTable).Insert(&canvas); err != nil {
 		log.Logger.Error("build room failed", log.Any("build room failed", err.Error()))
 	}
-	canvasId, _ := json.Marshal(canvas.UUID)
+
+	canvasInfo, _ := json.Marshal(models.BoardInfo{CanvasId: canvas.UUID})
 	createCanvas := models.CreateBoardRes{
 		ContentType: msg.ContentType,
-		Content:     string(canvasId),
+		Content:     string(canvasInfo),
 	}
 	res, _ := json.Marshal(createCanvas)
+	log.Logger.Debug("createBoard test", log.Any("createBoard test", res))
 	broadcast2All(clients, msg, res)
 }
 
 func canvasList(ctx context.Context, msg *models.Message, s *Server) {
 	// 此处给用户返回该房间的所有白板id
-	var whiteBoard []string
+	cavList := make([]string, 0)
 	//获取该房间的白板列表
-	database.MEngine.Table(models.WhiteBoardTable).Where("room_uuid = ? and deleted_time is null", msg.ToRoom).Iterate(new(string), func(i int, bean interface{}) error {
-		p := bean.(*string)
-		whiteBoard = append(whiteBoard, *p)
+	log.Logger.Debug("canvasList test", log.Any("canvasList test", msg.ToRoom))
+	database.MEngine.Table(models.WhiteBoardTable).Where("room_uuid = ? and deleted_time is null", msg.ToRoom).Iterate(new(models.WhiteBoard), func(i int, bean interface{}) error {
+		p := bean.(*models.WhiteBoard)
+		cavansId := p.UUID
+		cavList = append(cavList, cavansId)
 		return nil
 	})
-	canvasList, _ := json.Marshal(whiteBoard)
-	s.Clients[msg.From].Send <- canvasList
+	canvasList, _ := json.Marshal(cavList)
+	if _, ok := s.Clients[msg.From]; ok {
+		s.Clients[msg.From].Send <- canvasList
+	}
 }
 
 func leaveRoom(ctx context.Context, msg *models.Message, s *Server) {
-	if c, ok := s.Clients[msg.LeaveUser]; ok {
-		s.UnRegister <- c
+	user := models.Participant{}
+	if _, err := database.MEngine.Table(models.ParticipantTable).Where(" name = ? ", msg.UserName).Get(&user); err != nil {
+		log.Logger.Error("get participant info failed", log.Any("get participant info failed", err.Error()))
 	}
+	log.Logger.Debug("leaveRoom test", log.Any("leaveRoom test", user.Name))
+	if c, ok := s.Clients[user.UUID]; ok {
+		ExitRoom(c)
+		leave := &models.LeaveEnterRoomRes{
+			ContentType: models.LEAVE_ROOM,
+			UserName:    user.Name,
+		}
+		message, _ := json.Marshal(leave)
+
+		s.mutex.Lock()
+		for _, c := range s.Clients {
+			if c.UUID != c.UUID {
+				c.Send <- message
+			}
+		}
+		s.mutex.Unlock()
+		c.Conn.Close()
+		delete(s.Clients, c.UUID)
+	}
+}
+
+func customize(ctx context.Context, msg *models.Message, clients []*Client) {
+	custRes := models.CustomizeRes{
+		ContentType: msg.ContentType,
+		Content:     msg.Content,
+	}
+	log.Logger.Debug("customize test", log.Any("customize test", custRes))
+	res, _ := json.Marshal(custRes)
+	broadcast2All(clients, msg, res)
 }

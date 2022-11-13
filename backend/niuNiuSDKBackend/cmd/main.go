@@ -17,8 +17,9 @@ func main() {
 	log.Logger.Info("start server", log.String("start", "start web sever..."))
 
 	newRouter := service.NewRouter()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	ctx := context.Background()
 	go server.MyServer.Start(ctx)
 
 	s := &http.Server{

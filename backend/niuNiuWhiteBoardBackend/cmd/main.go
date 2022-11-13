@@ -2,14 +2,15 @@ package main
 
 import "C"
 import (
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"net/http"
-	"niuNiuWhiteBoardBackend/internal/models"
 
 	"niuNiuWhiteBoardBackend/common/database"
 	"niuNiuWhiteBoardBackend/common/log"
 	"niuNiuWhiteBoardBackend/config"
+	"niuNiuWhiteBoardBackend/internal/models"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -44,6 +45,7 @@ func main() {
 		v1.GET("/rooms/:uuid/exit", models.ExitRoom)
 		v1.GET("/rooms/:uuid/rtc", models.EnterRoom, models.GetRoomRTC)
 		v1.GET("/rooms/:uuid/whiteboard", models.EnterRoom, models.GetRoomWhiteBoard)
+		v1.POST("/forceleave", models.ForceUserExit)
 		v1.GET("/logout", models.Logout)
 	}
 

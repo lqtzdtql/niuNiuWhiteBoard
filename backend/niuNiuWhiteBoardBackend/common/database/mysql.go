@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+
 	conf "niuNiuWhiteBoardBackend/config"
 
 	_ "github.com/go-sql-driver/mysql"

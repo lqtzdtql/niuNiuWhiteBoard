@@ -1,4 +1,4 @@
-host: localhost:8282
+host:
 routes:
   - /signup
   - /login
@@ -15,7 +15,7 @@ logConfig:
   level: debug
 dbConfig:
   driverName: mysql
-  dsn: root:Gcx199815.@tcp(127.0.0.1:3306)/niuNiuWhiteBoard?charset=utf8mb4&parseTime=true&loc=Local
+  dsn: root:password@tcp(127.0.0.1:3306)/niuNiuWhiteBoard?charset=utf8mb4&parseTime=true&loc=Local
   showSql: true
   showExecTime: false
   maxIdle: 10
@@ -25,7 +25,7 @@ qiniuService:
   secretKey: IwHAY5Wkkd42i8JTBQ7BFjx9CpTyAXst5x0ImTqF
   rtcAppId: gqo29t6e5
 whiteboard:
-  ak: 123
+  ak: hpTBCFkXHjyZjktpyaFa6PIE2LCqItrUG8bwJiuXjssi35WdSujxJiiHjw8XOKnt
 
 
 

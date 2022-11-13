@@ -2,12 +2,13 @@ package secretkey
 
 import (
 	"crypto/rand"
-	"github.com/gin-gonic/gin"
-	"github.com/go-xorm/xorm"
-	"niuNiuSDKBackend/common/log"
+	"net/http"
 	"time"
 
-	"net/http"
+	"github.com/gin-gonic/gin"
+	"github.com/go-xorm/xorm"
+
+	"niuNiuSDKBackend/common/log"
 )
 
 type SecretKey struct {
@@ -34,7 +35,6 @@ func NewSk(c *gin.Context) {
 		log.Logger.Error("get sk failed", log.Any("get sk error", "get sk error"))
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"message": sk,
 		"code":    200,

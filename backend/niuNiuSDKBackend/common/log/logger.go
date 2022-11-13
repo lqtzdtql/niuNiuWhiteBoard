@@ -18,8 +18,6 @@ var (
 	Float32 = zap.Float32
 )
 
-// logpath 日志文件路径
-// loglevel 日志级别
 func InitLogger(logpath string, loglevel string) {
 	// 日志分割
 	hook := lumberjack.Logger{
@@ -30,7 +28,7 @@ func InitLogger(logpath string, loglevel string) {
 		Compress:   true,    // 是否压缩，默认不压缩
 	}
 	write := zapcore.AddSync(&hook)
-	// 设置日志级别
+	// 日志级别
 	// debug 可以打印出 info debug warn
 	// info  级别可以打印 warn info
 	// warn  只能打印 warn
@@ -56,10 +54,10 @@ func InitLogger(logpath string, loglevel string) {
 		MessageKey:     "msg",
 		StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,  // 小写编码器
-		EncodeTime:     zapcore.ISO8601TimeEncoder,     // ISO8601 UTC 时间格式
-		EncodeDuration: zapcore.SecondsDurationEncoder, //
-		EncodeCaller:   zapcore.FullCallerEncoder,      // 全路径编码器
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.FullCallerEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
 	}
 	// 设置日志级别
@@ -78,13 +76,10 @@ func InitLogger(logpath string, loglevel string) {
 		// write,
 		level,
 	)
-	// 开启开发模式，堆栈跟踪
+
 	caller := zap.AddCaller()
-	// 开启文件及行号
 	development := zap.Development()
-	// 设置初始化字段,如：添加一个服务器名称
 	filed := zap.Fields(zap.String("application", "niuNiuSDKServer"))
-	// 构造日志
 	Logger = zap.New(core, caller, development, filed)
 	Logger.Info("Logger init success")
 }

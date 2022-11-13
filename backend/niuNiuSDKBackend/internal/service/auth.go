@@ -1,22 +1,18 @@
 package service
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/oklog/ulid/v2"
 	"net/http"
+	"time"
+
 	"niuNiuSDKBackend/common/database"
 	"niuNiuSDKBackend/common/log"
 	"niuNiuSDKBackend/internal/jwt"
 	"niuNiuSDKBackend/internal/models"
 	"niuNiuSDKBackend/secretkey"
-)
 
-// 先判断有没有该用户uuid
-// 如果有该用户，返回错误
-// 如果没有该用户
-// --判断有没有该房间
-// ----如果是房主，有则进入，没有则建立room，同时participants中加入该用户。
-// ----如果是普通用户,没有则返回错误，有则participants中加入该用户。
+	"github.com/gin-gonic/gin"
+	"github.com/oklog/ulid/v2"
+)
 
 func Auth(c *gin.Context) {
 	token := c.Query("token")
@@ -29,6 +25,7 @@ func Auth(c *gin.Context) {
 	sk := secretkey.SecretKey{
 		SK: clientClaims.SK,
 	}
+
 	has, err := database.MEngine.Table(secretkey.SKTABLE).Exist(&sk)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
@@ -40,26 +37,30 @@ func Auth(c *gin.Context) {
 		log.Logger.Warn("sk not exist", log.Any("sk not exist", sk))
 		return
 	}
-	participant := models.Participant{
-		Name: clientClaims.UserName,
-	}
-	has, err = database.MEngine.Table(models.ParticipantTable).Exist(&participant)
+
+	participant := models.Participant{}
+	has, err = database.MEngine.Table(models.ParticipantTable).Where("name=? and room_name=?", clientClaims.UserName, clientClaims.RoomName).Get(&participant)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Logger.Error("database error", log.Any("database error", err.Error()))
 		return
 	}
 	if has {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "user has in the room", "code": 401})
-		log.Logger.Warn("user has in the room", log.Any("user has in the room", participant))
+		c.JSON(http.StatusOK, gin.H{
+			"message":   "auth success",
+			"user_uuid": participant.UUID,
+			"user_name": participant.Name,
+			"room_uuid": participant.RoomUUID,
+			"code":      200,
+		})
 		return
 	}
+	participant.Name = clientClaims.UserName
+	participant.RoomName = clientClaims.RoomName
 	participant.Permission = clientClaims.Permission
 	participant.UUID = ulid.Make().String()
-	room := models.Room{
-		Name: clientClaims.RoomName,
-	}
-	has, err = database.MEngine.Table(models.RoomTable).Exist(&room)
+	room := models.Room{}
+	has, err = database.MEngine.Table(models.RoomTable).Where("name=?", clientClaims.RoomName).Exist(&room)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Logger.Error("database error", log.Any("database error", err.Error()))
@@ -67,6 +68,9 @@ func Auth(c *gin.Context) {
 	}
 	if !has {
 		if participant.Permission == models.PermissionHost {
+			room.Name = clientClaims.RoomName
+			room.CreatedTime = time.Now()
+			room.UpdatedTime = time.Now()
 			room.UUID = ulid.Make().String()
 			room.HostUUID = participant.UUID
 			if _, err := database.MEngine.Table(models.RoomTable).Insert(&room); err != nil {
@@ -77,19 +81,20 @@ func Auth(c *gin.Context) {
 		}
 	}
 	participant.RoomUUID = room.UUID
+	participant.CreatedTime = time.Now()
+	participant.UpdatedTime = time.Now()
 	if _, err := database.MEngine.Table(models.ParticipantTable).Insert(&participant); err != nil {
 		log.Logger.Error("participant enter failed", log.Any("participant enter failed", err.Error()))
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		return
 	}
-	c.Set("room", &room)
-	c.Set("participant", &participant)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "auth success",
 		"user_uuid": participant.UUID,
+		"user_name": participant.Name,
 		"room_uuid": room.UUID,
 		"code":      200,
 	})
-	c.Next()
 	return
 }

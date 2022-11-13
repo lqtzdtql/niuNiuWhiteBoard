@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+
 	"niuNiuWhiteBoardBackend/common/log"
 
 	"github.com/dgrijalva/jwt-go"

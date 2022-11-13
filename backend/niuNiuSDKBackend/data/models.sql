@@ -35,12 +35,20 @@ CREATE TABLE `participants` (
     `name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '参会者用户名',
     `uuid` varchar(128) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT'参会者唯一标识符',
     `room_uuid` varchar(128) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT'参会者所在房间标识符',
+    `room_name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '参会者用户名',
     `permission` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '用户权限',
-    `current_whiteboard` varchar(128) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT'参会者最近使用的白板标识符',
     `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '进房时间',
     `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
     `deleted_time` datetime DEFAULT NULL COMMENT '删除时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `sk` (
+      `id` bigint(20) UNSIGNED NOT NULL COMMENT '主键',
+      `sk` varchar(70) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT'SecretKey',
+      `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+      `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
+      `deleted_time` datetime DEFAULT NULL COMMENT '删除时间'
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- 转储表的索引
@@ -60,7 +68,9 @@ ALTER TABLE `rooms`
 ALTER TABLE `participants`
     ADD PRIMARY KEY (`id`);
 
---
+ALTER TABLE `sk`
+    ADD PRIMARY KEY (`id`);
+
 -- 使用表AUTO_INCREMENT `whiteboards`
 --
 ALTER TABLE `whiteboards`
@@ -79,3 +89,6 @@ ALTER TABLE `participants`
     MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键';
 COMMIT;
 
+ALTER TABLE `sk`
+    MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键';
+COMMIT;

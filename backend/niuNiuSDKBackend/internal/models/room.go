@@ -4,16 +4,18 @@ import (
 	"time"
 )
 
-// 连接建立时，根据roomuuid查询room数据库，查看有没有该房间
-// 如果没有，则建立房间，加入者为host
-// 如果有，则加入房间，在participant表中插入。
-// 当有人退出时，删除该用户。
-// 如果退出的是房主，则广播踢人消息。房间销毁。
+/*
+	连接建立时，根据roomuuid查询room数据库，查看有没有该房间
+	如果没有，则建立房间，加入者为host
+	如果有，则加入房间，在participant表中插入。
+	当有人退出时，删除该用户。
+	如果退出的是房主，则广播踢人消息。房间销毁。
+*/
 
 const (
 	RoomTable        = "rooms"
 	ParticipantTable = "participants"
-	WhiteBoardTable  = "whiteBoards"
+	WhiteBoardTable  = "whiteboards"
 )
 
 type Room struct {

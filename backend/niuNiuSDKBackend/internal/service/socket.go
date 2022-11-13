@@ -2,6 +2,8 @@ package service
 
 import (
 	"net/http"
+	"time"
+
 	"niuNiuSDKBackend/common/database"
 	"niuNiuSDKBackend/common/log"
 	"niuNiuSDKBackend/internal/jwt"
@@ -43,17 +45,28 @@ func RunSocket(c *gin.Context) {
 	}
 
 	participant := models.Participant{}
-	_, err = database.MEngine.Table(models.ParticipantTable).Where("name=?", clientClaims.UserName).Get(&participant)
+	has, err = database.MEngine.Table(models.ParticipantTable).Where("name=? and room_name=?", clientClaims.UserName, clientClaims.RoomName).Get(&participant)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Logger.Error("database error", log.Any("database error", err.Error()))
 		return
 	}
+	if !has {
+		log.Logger.Warn("participant not exit", log.Any("participant not exit", clientClaims.UserName))
+		return
+	}
+	log.Logger.Info("participant info", log.Any("participant info", participant))
+
 	room := models.Room{}
 	has, err = database.MEngine.Table(models.RoomTable).Where("name=?", clientClaims.RoomName).Get(&room)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Logger.Error("database error", log.Any("database error", err.Error()))
+		return
+	}
+	log.Logger.Info("room info", log.Any("room info", room))
+	if _, ok := server.MyServer.Clients[participant.UUID]; ok {
+		log.Logger.Debug("websocket has build, not build again", log.Any("websocket has build, not build again", participant.UUID))
 		return
 	}
 
@@ -66,11 +79,14 @@ func RunSocket(c *gin.Context) {
 	log.Logger.Info("websocket build success", log.Any("websocket build success", ws.RemoteAddr()))
 
 	client := &server.Client{
-		UUID:     participant.UUID,
-		Conn:     ws,
-		RoomUUID: room.UUID,
-		Send:     make(chan []byte),
+		UUID:          participant.UUID,
+		Conn:          ws,
+		RoomUUID:      room.UUID,
+		Send:          make(chan []byte),
+		HeartbeatTime: time.Now().Unix(),
 	}
+	log.Logger.Debug("client", log.Any("client", client.UUID))
+
 	server.MyServer.Register <- client
 	go client.Read()
 	log.Logger.Info("start to read", log.Any("start to read", ws.RemoteAddr()))

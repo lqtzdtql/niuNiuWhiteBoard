@@ -1,10 +1,13 @@
 package server
 
 import (
-	"github.com/gorilla/websocket"
+	"encoding/json"
+	"time"
+
 	"niuNiuSDKBackend/common/log"
 	"niuNiuSDKBackend/internal/models"
-	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type Client struct {
@@ -17,8 +20,21 @@ type Client struct {
 
 func (c *Client) Read() {
 	defer func() {
-		MyServer.UnRegister <- c
+		user := ExitRoom(c)
+		leave := &models.LeaveEnterRoomRes{
+			ContentType: models.LEAVE_ROOM,
+			UserName:    user.Name,
+		}
+		message, _ := json.Marshal(leave)
+		MyServer.mutex.Lock()
+		for _, c := range MyServer.Clients {
+			if c.UUID != c.UUID {
+				c.Send <- message
+			}
+		}
+		MyServer.mutex.Unlock()
 		c.Conn.Close()
+		delete(MyServer.Clients, c.UUID)
 	}()
 
 	for {
@@ -29,16 +45,17 @@ func (c *Client) Read() {
 			c.Conn.Close()
 			break
 		}
-
 		msg := &models.Message{}
-
+		json.Unmarshal(message, msg)
+		log.Logger.Debug("receive message", log.Any("receive message", msg))
 		// pong
 		if msg.ContentType == models.HEAT_BEAT {
 			c.HeartbeatTime = time.Now().Unix()
 			pong := &models.HeatBeatRes{
 				ContentType: models.HEAT_BEAT,
 			}
-			c.Conn.WriteJSON(pong)
+			respong, _ := json.Marshal(pong)
+			c.Conn.WriteMessage(websocket.TextMessage, respong)
 		} else {
 			MyServer.Broadcast <- message
 		}
@@ -51,6 +68,6 @@ func (c *Client) Write() {
 	}()
 
 	for message := range c.Send {
-		c.Conn.WriteJSON(message)
+		c.Conn.WriteMessage(websocket.TextMessage, message)
 	}
 }

@@ -319,3 +319,51 @@ func ExitRoom(c *gin.Context) {
 		"code":    200,
 	})
 }
+
+func ForceUserExit(c *gin.Context) {
+	currentUser := c.MustGet("currentUser").(*User)
+	db := c.MustGet("db").(*xorm.Engine)
+	var participantExit ParticipantExit
+	if err := c.BindJSON(&participantExit); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "踢人参数错误", "code": 401})
+		return
+	}
+	// 踢人的用户必须是房主
+	host := Participant{}
+	db.Table(ParticipantTable).Where("user_uuid = ?", currentUser.UUID).Get(&host)
+	if host.Permission != PermissionHost {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "用户不是房主，无法踢人", "code": 401})
+		log.Logger.Debug("participant not host", log.Any("participant not host", host.UserUUID))
+		return
+	}
+
+	//判断被踢的人在不在
+	participant := new(Participant)
+	participant.UserUUID = participantExit.UserUUID
+	has, err := db.Table(ParticipantTable).Where("user_uuid = ?", participant.UserUUID).Get(participant)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
+		log.Logger.Error("exit room failed", log.Any("exit room failed", err.Error()))
+		return
+	}
+	if !has {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "您踢的用户不在房中", "code": 401})
+		log.Logger.Warn("user not in the room", log.Any("user not in the room", participant.UserUUID))
+		return
+	} else {
+		//如果在，则删除；
+		_, err := db.Table(ParticipantTable).Where("user_uuid = ? ", participant.UserUUID).Delete(participant)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
+			log.Logger.Error("exit room failed", log.Any("exit room failed", err.Error()))
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "踢人成功",
+		"code":    200,
+	})
+
+	return
+}

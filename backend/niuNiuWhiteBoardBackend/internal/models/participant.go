@@ -23,3 +23,6 @@ type ParticipantRow struct {
 	UserUUID   string `json:"user_uuid" xorm:"'user_uuid' not null default '' VARCHAR(128)"`
 	Permission string `json:"permission" xorm:"'permission' not null default '' VARCHAR(20)"`
 }
+type ParticipantExit struct {
+	UserUUID string `json:"user_uuid" xorm:"'user_uuid' not null default '' VARCHAR(128)"`
+}
