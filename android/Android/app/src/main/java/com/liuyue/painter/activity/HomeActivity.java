@@ -18,7 +18,6 @@ import com.liuyue.painter.utils.AppServer;
 import java.util.ArrayList;
 
 public class HomeActivity extends BaseActivity {
-
     private LoginBean.UserInfoBean mUserInfoBean;
 
     private RecyclerView mRecyclerView;
@@ -41,6 +40,7 @@ public class HomeActivity extends BaseActivity {
         mRoomListAdapter.setOnClickListener(uuid -> {
             Bundle bundle = new Bundle();
             bundle.putString("roomUUID", uuid);
+            bundle.putSerializable("userInfo", mUserInfoBean);
             startActivity(RoomActivity.class, bundle);
         });
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -74,12 +74,6 @@ public class HomeActivity extends BaseActivity {
         if (view.getId() == R.id.fab) {
             startActivity(CreateRoomActivity.class);
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        ThreadUtils.getSinglePool().execute(() -> AppServer.getInstance().exitRoom(mUserInfoBean.getUuid()));
     }
 
     public static class SpacesItemDecoration extends RecyclerView.ItemDecoration {

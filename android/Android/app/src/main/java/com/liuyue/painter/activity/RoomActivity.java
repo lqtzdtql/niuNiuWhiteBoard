@@ -12,37 +12,45 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 
+import com.blankj.utilcode.util.ThreadUtils;
+import com.blankj.utilcode.util.ToastUtils;
 import com.liuyue.painter.Constants;
 import com.liuyue.painter.R;
 import com.liuyue.painter.callback.PageChangeCall;
+import com.liuyue.painter.manager.WhiteBoardConn;
+import com.liuyue.painter.model.LoginBean;
 import com.liuyue.painter.model.SaveOperation;
 import com.liuyue.painter.model.SavePngOperation;
 import com.liuyue.painter.model.SaveSvgOperation;
+import com.liuyue.painter.model.WhiteBoardAuthBean;
+import com.liuyue.painter.utils.AppServer;
 import com.liuyue.painter.utils.SaveUtil;
-import com.liuyue.painter.view.ChooseUIManager;
-import com.liuyue.painter.view.FootUIManager;
 import com.liuyue.painter.view.ArtBoard;
-import com.liuyue.painter.view.SaveMenuManager;
+import com.liuyue.painter.manager.ChooseUIManager;
+import com.liuyue.painter.manager.FootUIManager;
+import com.liuyue.painter.manager.SaveMenuManager;
+
+import java.net.URISyntaxException;
 
 public class RoomActivity extends BaseActivity {
-
     private ArtBoard mArtBoard;
     private ImageView mExitBtn;
     private ImageView mUndoBtn;
     private ImageView mRedoBtn;
     private ImageView mMoreBtn;
-    private LinearLayout mFootLayout;
     private FootUIManager mFootUIManager;
     private LinearLayout mSaveMenuLayout;
     private SaveMenuManager mSaveMenuManager;
     private LinearLayout mChooseLayout;
     private ChooseUIManager mChooseUIManager;
-    private String saveFileName;
-    private SaveOperation so;
 
     private boolean mIsMenuShow;
+    private String mSaveFileName;
+    private SaveOperation mSaveOperation;
 
     private String mRoomUUID;
+    private LoginBean.UserInfoBean mUserInfoBean;
+    private WhiteBoardConn mWhiteBoardConn;
 
     @Override
     protected int getLayoutId() {
@@ -51,17 +59,17 @@ public class RoomActivity extends BaseActivity {
 
     @Override
     protected void initView() {
-        mArtBoard = (ArtBoard) findViewById(R.id.id_paint_view);
-        mExitBtn = (ImageView) findViewById(R.id.id_exit_btn);
-        mUndoBtn = (ImageView) findViewById(R.id.id_undo_btn);
-        mRedoBtn = (ImageView) findViewById(R.id.id_redo_btn);
-        mMoreBtn = (ImageView) findViewById(R.id.id_save_btn);
+        mArtBoard = (ArtBoard) findViewById(R.id.paint_view);
+        mExitBtn = (ImageView) findViewById(R.id.iv_back);
+        mUndoBtn = (ImageView) findViewById(R.id.iv_undo);
+        mRedoBtn = (ImageView) findViewById(R.id.iv_redo);
+        mMoreBtn = (ImageView) findViewById(R.id.iv_setting);
 
-        mFootLayout = (LinearLayout) findViewById(R.id.id_foot_layout);
-        mChooseLayout = (LinearLayout) findViewById(R.id.id_choose_layout);
-        mSaveMenuLayout = (LinearLayout) findViewById(R.id.save_menu_layout);
+        LinearLayout footLayout = (LinearLayout) findViewById(R.id.ll_foot);
+        mChooseLayout = (LinearLayout) findViewById(R.id.ll_choose_panel);
+        mSaveMenuLayout = (LinearLayout) findViewById(R.id.ll_setting_menu);
         mSaveMenuManager = new SaveMenuManager(this, mSaveMenuLayout);
-        mFootUIManager = new FootUIManager(this, mFootLayout);
+        mFootUIManager = new FootUIManager(this, footLayout);
         mChooseUIManager = new ChooseUIManager(this, mChooseLayout);
     }
 
@@ -91,24 +99,46 @@ public class RoomActivity extends BaseActivity {
     @Override
     protected void initData() {
         mRoomUUID = getIntent().getStringExtra("roomUUID");
+        mUserInfoBean = (LoginBean.UserInfoBean) getIntent().getSerializableExtra("userInfo");
+        ThreadUtils.getSinglePool().execute(() -> {
+            String whiteBoardToken = AppServer.getInstance().enterRoom(mUserInfoBean.getUuid());
+            if (whiteBoardToken == null) {
+                ToastUtils.showShort("加入房间失败");
+                finish();
+                return;
+            }
+            WhiteBoardAuthBean authBean = AppServer.getInstance().authWhiteBoard(whiteBoardToken);
+            if (authBean == null) {
+                ToastUtils.showShort("加入房间失败");
+                finish();
+                return;
+            }
+            try {
+                mWhiteBoardConn = new WhiteBoardConn(authBean.getUserUUID(),whiteBoardToken);
+                mWhiteBoardConn.connect();
+            } catch (URISyntaxException e) {
+                ToastUtils.showShort("加入房间失败");
+                finish();
+            }
+        });
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.id_exit_btn:
+            case R.id.iv_back:
                 // 退出保存操作
                 exit();
                 break;
-            case R.id.id_undo_btn:
+            case R.id.iv_undo:
                 // 撤销操作
                 mArtBoard.undo();
                 break;
-            case R.id.id_redo_btn:
+            case R.id.iv_redo:
                 // 重做操作
                 mArtBoard.redo();
                 break;
-            case R.id.id_save_btn:
+            case R.id.iv_setting:
                 // 另存为相关操作
                 showMenuLogic();
                 break;
@@ -341,12 +371,12 @@ public class RoomActivity extends BaseActivity {
         @Override
         public void onSaveClick(int savekind) {
             if (savekind == Constants.PNG) {
-                so = new SavePngOperation();
+                mSaveOperation = new SavePngOperation();
             } else {
-                so = new SaveSvgOperation();
+                mSaveOperation = new SaveSvgOperation();
             }
             // 获取需要保存的内容
-            so.GetContent(mArtBoard);
+            mSaveOperation.GetContent(mArtBoard);
             final EditText et = new EditText(RoomActivity.this);
             new AlertDialog.Builder(RoomActivity.this)
                     .setMessage("输入保存文件名")
@@ -356,7 +386,7 @@ public class RoomActivity extends BaseActivity {
                             Toast.makeText(RoomActivity.this, "文件名不能为空", Toast.LENGTH_SHORT).show();
                         } else {
                             try {
-                                saveFileName = et.getText().toString();
+                                mSaveFileName = et.getText().toString();
                                 // 开启线程保存
                                 new Thread(new MyPicSaveRunnable()).start();
                                 Message msg = new Message();
@@ -373,15 +403,21 @@ public class RoomActivity extends BaseActivity {
         }
     };
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ThreadUtils.getSinglePool().execute(() -> AppServer.getInstance().exitRoom(mRoomUUID));
+    }
+
     private final class MyPicSaveRunnable implements Runnable {
 
         @Override
         public void run() {
-            if (so != null) {
-                so.setFilepath(Environment.getExternalStorageDirectory() + "/palette");
-                so.setFilename(saveFileName);
-                so.GetAbusoluteFileName();
-                so.SavePainting();
+            if (mSaveOperation != null) {
+                mSaveOperation.setFilepath(Environment.getExternalStorageDirectory() + "/palette");
+                mSaveOperation.setFilename(mSaveFileName);
+                mSaveOperation.GetAbusoluteFileName();
+                mSaveOperation.SavePainting();
             }
         }
     }

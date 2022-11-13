@@ -1,4 +1,4 @@
-package com.liuyue.painter.view;
+package com.liuyue.painter.manager;
 
 import android.content.Context;
 import android.view.View;
@@ -28,19 +28,19 @@ public class SaveMenuManager implements View.OnClickListener {
     }
 
     private void initView() {
-        SavePngTv = (TextView) mView.findViewById(R.id.save_png_btn);
-        SaveSvgTv = (TextView) mView.findViewById(R.id.save_svg_btn);
+        SavePngTv = (TextView) mView.findViewById(R.id.tv_save_png);
+        SaveSvgTv = (TextView) mView.findViewById(R.id.tv_save_svg);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.save_png_btn:
+            case R.id.tv_save_png:
                 if (mSaveBtnClickListener != null) {
                     mSaveBtnClickListener.onSaveClick(Constants.PNG);
                 }
                 break;
-            case R.id.save_svg_btn:
+            case R.id.tv_save_svg:
                 if (mSaveBtnClickListener != null) {
                     mSaveBtnClickListener.onSaveClick(Constants.SVG);
                 }

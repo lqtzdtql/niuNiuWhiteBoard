@@ -1,4 +1,4 @@
-package com.liuyue.painter.view;
+package com.liuyue.painter.manager;
 
 import android.content.Context;
 import android.view.View;
@@ -41,18 +41,18 @@ public class FootUIManager implements View.OnClickListener {
     }
 
     private void initView() {
-        mBrushSizeBtn = (ImageButton) mView.findViewById(R.id.brush_size_choose);
-        mBrushColorBtn = (ImageButton) mView.findViewById(R.id.id_color_choose);
-        mAddPageBtn = (ImageButton) mView.findViewById(R.id.id_add_canvas);
-        mCutPathBtn = (ImageButton) mView.findViewById(R.id.id_cut_path);
-        mEraserBtn = (ImageButton) mView.findViewById(R.id.id_eraser);
-        mShapeBtn = (ImageButton) mView.findViewById(R.id.id_select_shape);
+        mBrushSizeBtn = (ImageButton) mView.findViewById(R.id.bt_brush_size_choose);
+        mBrushColorBtn = (ImageButton) mView.findViewById(R.id.bt_color_choose);
+        mAddPageBtn = (ImageButton) mView.findViewById(R.id.bt_add_canvas);
+        mCutPathBtn = (ImageButton) mView.findViewById(R.id.bt_cut_path);
+        mEraserBtn = (ImageButton) mView.findViewById(R.id.bt_eraser);
+        mShapeBtn = (ImageButton) mView.findViewById(R.id.bt_select_shape);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.brush_size_choose:
+            case R.id.bt_brush_size_choose:
                 // 选择宽度功能
                 if (mSizeBtnOnclickListener != null) {
                     mSizeBtnOnclickListener.Clicked(isShow);
@@ -61,33 +61,33 @@ public class FootUIManager implements View.OnClickListener {
                 }
                 break;
 
-            case R.id.id_color_choose:
+            case R.id.bt_color_choose:
                 // 选择颜色功能
                 if (mColorBtnOnclickListener != null) {
                     mColorBtnOnclickListener.ColorClicked(isShow);
                     isShow = !isShow;
                 }
                 break;
-            case R.id.id_add_canvas:
+            case R.id.bt_add_canvas:
                 // 添加多页功能
                 if (mPageBtnOnClickListener != null) {
                     mPageBtnOnClickListener.PageClicked(isShow);
                     isShow = !isShow;
                 }
                 break;
-            case R.id.id_cut_path:
+            case R.id.bt_cut_path:
                 // TODO 笔迹获取及相关操作
                 if (mShapeChooseBtnOnclickListener != null) {
                     mShapeChooseBtnOnclickListener.ChooseOnClicked();
                 }
                 break;
-            case R.id.id_eraser:
+            case R.id.bt_eraser:
                 // 橡皮擦功能
                 if (mEraserBtnOnClickListener != null) {
                     mEraserBtnOnClickListener.EraserClicked();
                 }
                 break;
-            case R.id.id_select_shape:
+            case R.id.bt_select_shape:
                 // 选择图形功能
                 if (mShapeBtnClickListener != null) {
                     mShapeBtnClickListener.onShapeBtnClicked(isShow);

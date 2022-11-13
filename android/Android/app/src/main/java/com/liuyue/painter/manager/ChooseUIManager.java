@@ -1,4 +1,4 @@
-package com.liuyue.painter.view;
+package com.liuyue.painter.manager;
 
 import android.content.Context;
 import android.widget.LinearLayout;
@@ -9,6 +9,9 @@ import com.liuyue.painter.callback.ColorCallBack;
 import com.liuyue.painter.callback.PageChangeCall;
 import com.liuyue.painter.callback.ShapeChangeCall;
 import com.liuyue.painter.callback.SizeChangeCall;
+import com.liuyue.painter.view.ColorPalette;
+import com.liuyue.painter.view.PageSelectView;
+import com.liuyue.painter.view.ShapeSelectView;
 
 public class ChooseUIManager {
     private final Context mContext;
