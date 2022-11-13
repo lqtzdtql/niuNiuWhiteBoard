@@ -4,13 +4,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!--title-->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="50dp">
 
         <ImageView
-            android:id="@+id/id_exit_btn"
+            android:id="@+id/iv_back"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_alignParentLeft="true"
@@ -19,47 +18,46 @@
             android:src="@drawable/ic_back_dark" />
 
         <ImageView
-            android:id="@+id/id_save_btn"
+            android:id="@+id/iv_setting"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="5dp"
-            android:background="@drawable/ic_more_dark"></ImageView>
+            android:background="@drawable/ic_more_dark" />
 
         <ImageView
-            android:id="@+id/id_redo_btn"
+            android:id="@+id/iv_redo"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_centerVertical="true"
             android:layout_marginRight="30dp"
-            android:layout_toLeftOf="@id/id_save_btn"
+            android:layout_toLeftOf="@id/iv_setting"
             android:background="@drawable/ic_redo" />
 
         <ImageView
-            android:id="@+id/id_undo_btn"
+            android:id="@+id/iv_undo"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_centerVertical="true"
             android:layout_marginRight="30dp"
-            android:layout_toLeftOf="@id/id_redo_btn"
+            android:layout_toLeftOf="@id/iv_redo"
             android:background="@drawable/ic_undo" />
     </RelativeLayout>
 
-    <!--body-->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.liuyue.painter.view.MyCanvas
-            android:id="@+id/id_paint_view"
+        <com.little.painter.view.ArtBoard
+            android:id="@+id/paint_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        </com.liuyue.painter.view.MyCanvas>
+        </com.little.painter.view.ArtBoard>
 
         <LinearLayout
-            android:id="@+id/id_choose_layout"
+            android:id="@+id/ll_choose_panel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
@@ -69,9 +67,8 @@
 
         </LinearLayout>
 
-        <!--foot-->
         <LinearLayout
-            android:id="@+id/id_foot_layout"
+            android:id="@+id/ll_foot"
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_gravity="bottom"
@@ -85,7 +82,7 @@
                 android:layout_weight="1">
 
                 <ImageButton
-                    android:id="@+id/brush_size_choose"
+                    android:id="@+id/bt_brush_size_choose"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="center_vertical"
@@ -100,7 +97,7 @@
                 android:layout_weight="1">
 
                 <ImageButton
-                    android:id="@+id/id_color_choose"
+                    android:id="@+id/bt_color_choose"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="center_vertical"
@@ -113,7 +110,7 @@
                 android:layout_weight="1">
 
                 <ImageButton
-                    android:id="@+id/id_add_canvas"
+                    android:id="@+id/bt_add_canvas"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="center_vertical"
@@ -128,7 +125,7 @@
                 android:layout_weight="1">
 
                 <ImageButton
-                    android:id="@+id/id_cut_path"
+                    android:id="@+id/bt_cut_path"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="center_vertical"
@@ -143,7 +140,7 @@
                 android:layout_weight="1">
 
                 <ImageButton
-                    android:id="@+id/id_eraser"
+                    android:id="@+id/bt_eraser"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="center_vertical"
@@ -158,7 +155,7 @@
                 android:layout_weight="1">
 
                 <ImageButton
-                    android:id="@+id/id_select_shape"
+                    android:id="@+id/bt_select_shape"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="center_vertical"
@@ -170,31 +167,30 @@
         </LinearLayout>
 
         <LinearLayout
-
-            android:id="@+id/save_menu_layout"
+            android:id="@+id/ll_setting_menu"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
-            android:background="@color/grey"
+            android:background="@color/secondary_text"
             android:orientation="vertical"
             android:visibility="gone">
 
             <TextView
-                android:id="@+id/save_png_btn"
+                android:id="@+id/tv_save_png"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="10dp"
                 android:gravity="right"
-                android:text="@string/save_as_png"
+                android:text="另存为 png"
                 android:textSize="25sp" />
 
             <TextView
-                android:id="@+id/save_svg_btn"
+                android:id="@+id/tv_save_svg"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="10dp"
                 android:gravity="right"
-                android:text="@string/save_as_svg"
+                android:text="另存为 svg"
                 android:textSize="25sp" />
         </LinearLayout>
 

@@ -14,7 +14,7 @@
             android:id="@+id/id_add_page"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@mipmap/addpage" />
+            android:src="@drawable/addpage" />
 
     </LinearLayout>
 
@@ -28,7 +28,7 @@
             android:id="@+id/id_pre_page"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@mipmap/pre" />
+            android:src="@drawable/pre" />
     </LinearLayout>
 
     <LinearLayout
@@ -55,7 +55,7 @@
             android:id="@+id/id_next_page"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@mipmap/next" />
+            android:src="@drawable/next" />
     </LinearLayout>
 
 

@@ -2,74 +2,77 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="100dp"
+    android:layout_height="80dp"
     android:background="@color/white"
     android:elevation="10dp"
-    app:cardCornerRadius="16dp">
+    app:cardCornerRadius="5dp">
 
     <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_width="500dp"
+        android:layout_height="80dp">
 
         <ImageView
-            android:layout_width="60dp"
-            android:layout_height="70dp"
-            android:src="@drawable/img_room_cover"
+            android:id="@+id/iv_room_cover"
+            android:layout_width="40dp"
+            android:layout_height="50dp"
             android:layout_centerVertical="true"
             android:layout_marginLeft="10dp"
-            android:id="@+id/iv_room_cover"/>
+            android:src="@drawable/img_room_cover" />
 
         <TextView
+            android:id="@+id/tv_room_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="流月的房间"
-            android:textColor="@color/black"
-            android:layout_toRightOf="@+id/iv_room_cover"
-            android:layout_alignTop="@+id/iv_room_cover"
-            android:layout_marginTop="10dp"
-            android:textSize="20dp"
+            android:layout_alignParentTop="true"
             android:layout_marginLeft="15dp"
-            android:id="@+id/tv_room_name"/>
+            android:layout_marginTop="15dp"
+            android:layout_toRightOf="@+id/iv_room_cover"
+            android:text="小画家的房间"
+            android:textColor="@color/black"
+            android:textSize="18dp" />
 
         <TextView
+            android:id="@+id/tv_host"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="15dp"
+            android:layout_marginBottom="15dp"
+            android:layout_toRightOf="@+id/iv_room_cover"
             android:text="主持人："
             android:textColor="@color/black"
-            android:layout_toRightOf="@+id/iv_room_cover"
-            android:layout_alignBottom="@+id/iv_room_cover"
-            android:layout_marginBottom="10dp"
-            android:layout_marginLeft="15dp"
-            android:id="@+id/tv_host"/>
+            android:textSize="12dp" />
 
         <TextView
+            android:id="@+id/tv_host_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="流月"
-            android:textColor="@color/black"
-            android:layout_toRightOf="@+id/tv_host"
             android:layout_alignBottom="@+id/tv_host"
-            android:id="@+id/tv_host_name"/>
+            android:layout_toRightOf="@+id/tv_host"
+            android:text="小画家"
+            android:textColor="@color/black"
+            android:textSize="12dp" />
 
         <TextView
+            android:id="@+id/tv_current"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="当前人数："
-            android:textColor="@color/black"
-            android:layout_toRightOf="@+id/tv_host"
             android:layout_alignBottom="@+id/tv_host"
             android:layout_marginLeft="100dp"
-            android:id="@+id/tv_current"/>
-
+            android:layout_toRightOf="@+id/tv_host"
+            android:text="当前人数："
+            android:textColor="@color/black"
+            android:textSize="12dp" />
 
         <TextView
+            android:id="@+id/tv_current_number"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/tv_host"
+            android:layout_toRightOf="@+id/tv_current"
             android:text="66"
             android:textColor="@color/black"
-            android:layout_toRightOf="@+id/tv_current"
-            android:layout_alignBottom="@+id/tv_host"
-            android:id="@+id/tv_current_number"/>
+            android:textSize="12dp" />
 
     </RelativeLayout>
 

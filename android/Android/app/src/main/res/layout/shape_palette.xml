@@ -15,7 +15,7 @@
             android:id="@+id/id_select_ink"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@mipmap/icon_ink" />
+            android:src="@drawable/icon_ink" />
     </LinearLayout>
 
     <LinearLayout
@@ -29,7 +29,7 @@
             android:id="@+id/id_select_line"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@mipmap/icon_line" />
+            android:src="@drawable/icon_line" />
     </LinearLayout>
 
     <LinearLayout
@@ -43,7 +43,7 @@
             android:id="@+id/id_select_rect"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@mipmap/icon_rect" />
+            android:src="@drawable/icon_rect" />
     </LinearLayout>
 
     <LinearLayout
@@ -57,6 +57,8 @@
             android:id="@+id/id_select_circle"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:src="@mipmap/icon_circlr" />
+            android:src="@drawable/icon_circle" />
+
     </LinearLayout>
+
 </LinearLayout>

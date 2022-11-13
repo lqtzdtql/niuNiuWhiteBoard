@@ -11,6 +11,7 @@
         android:layout_height="50dp"
         android:layout_gravity="center"
         android:layout_marginTop="10dp"
-        android:src="@mipmap/mc_bg_week_switch_on"
+        android:src="@drawable/bg_week_switch_on"
         app:civ_border_width="25dp" />
+
 </LinearLayout>
