@@ -3,7 +3,7 @@ import { Util } from './Util';
 
 /** 文字类 */
 export class Text extends FabricObject {
-  public type: string = 'text';
+  public type: string = 'Text';
   public text: string = '';
   public size: number = 10;
   public font: string = 'Microsoft YaHei';

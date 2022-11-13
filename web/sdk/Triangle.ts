@@ -2,7 +2,7 @@ import { FabricObject } from './FabricObject';
 
 /** 三角形类 */
 export class Triangle extends FabricObject {
-  public type: string = 'triangle';
+  public type: string = 'Triangle';
   constructor(options: any) {
     super(options);
     this.height = this.width;

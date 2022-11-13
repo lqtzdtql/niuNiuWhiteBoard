@@ -8,7 +8,7 @@ type paramsType = {
 };
 
 export async function joinRoom(params: paramsType) {
-  const res = await fetch(`/auth?token=${params.token}`);
+  const res = await fetch(`http://81.68.68.216:8888/auth?token=${params.token}`);
   if (res.status >= 200 && res.status < 300) {
     const resData = await res.json();
     const { user_uuid, room_uuid, code, message, userName } = resData;
@@ -21,6 +21,7 @@ export async function joinRoom(params: paramsType) {
         onlyRead: params.onlyRead,
         el: params.el,
         userName,
+        token: params.token,
       };
       const room = new Room(roomData);
       return room;

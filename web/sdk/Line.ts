@@ -2,7 +2,7 @@ import { FabricObject } from './FabricObject';
 
 /** 直线类 */
 export class Line extends FabricObject {
-  public type: string = 'line';
+  public type: string = 'Line';
 
   constructor(options: any) {
     super(options);

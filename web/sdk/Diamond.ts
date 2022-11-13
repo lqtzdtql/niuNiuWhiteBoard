@@ -2,7 +2,7 @@ import { FabricObject } from './FabricObject';
 
 /** 菱形类 */
 export class Diamond extends FabricObject {
-  public type: string = 'diamond';
+  public type: string = 'Diamond';
   constructor(options: any) {
     super(options);
     this.height = this.width;

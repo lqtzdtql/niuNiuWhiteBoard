@@ -1,11 +1,11 @@
 // @ts-nocheck
-import { Util } from './Util';
-import { Point } from './Point';
-import { FabricObject } from './FabricObject';
-import { Group } from './Group';
-import { Offset, Pos, GroupSelector, CurrentTransform } from './interface';
 import { EventCenter } from './EventCenter';
 import { FabricObjects } from './Fabric';
+import { FabricObject } from './FabricObject';
+import { Group } from './Group';
+import { CurrentTransform, GroupSelector, Offset, Pos } from './interface';
+import { Point } from './Point';
+import { Util } from './Util';
 
 const STROKE_OFFSET = 0.5;
 const cursorMap = {
@@ -203,16 +203,6 @@ export class Canvas extends EventCenter {
     Util.addListener(window, 'resize', this._onResize);
     Util.addListener(this.upperCanvasEl, 'mousedown', this._onMouseDown);
     Util.addListener(this.upperCanvasEl, 'mousemove', this._onMouseMove);
-    this.on('object:added', () => {
-      while (this.modifiedAgainList.length) {
-        this.modifiedAgainList.pop();
-      }
-    });
-    this.on('object:modified', () => {
-      while (this.modifiedAgainList.length) {
-        this.modifiedAgainList.pop();
-      }
-    });
   }
   _onMouseDown(e: MouseEvent) {
     this.__onMouseDown(e);
@@ -260,7 +250,7 @@ export class Canvas extends EventCenter {
         this.deactivateAllWithDispatch();
         // this.renderAll();
       } else {
-        if (!target.visible || target.isLocked) return;
+        // if (!target.visible || target.isLocked) return;
         // 如果是点选操作，接下来就要为各种变换做准备
         target.saveState();
 
@@ -336,7 +326,7 @@ export class Canvas extends EventCenter {
 
   addAnimate(target: FabricObject) {
     const props = target.animateEnd;
-    const animateOptions =;
+    const animateOptions = 1;
     target.animate();
   }
   /** 处理鼠标 hover 事件和物体变换时的拖拽事件
@@ -380,6 +370,7 @@ export class Canvas extends EventCenter {
           y = pointer.y;
 
         this._currentTransform.target.isMoving = true;
+        // if (!this._currentTransform.target.active) return;
 
         let t = this._currentTransform,
           reset = false;
@@ -784,7 +775,6 @@ export class Canvas extends EventCenter {
           currentObject.isContainedWithinRect(selectionX1Y1, selectionX2Y2)) &&
         !currentObject.isLocked
       ) {
-        this.emit('sendLock', { objectId: currentObject.objectId });
         currentObject.on('canLock', () => {
           currentObject.setActive(true);
           objects.push(currentObject);
@@ -792,6 +782,8 @@ export class Canvas extends EventCenter {
             this.setActiveObject(objects[0], e);
             this._activeObject = objects[0];
           } else if (objects.length > 1) {
+            this.emit('sendLock', { objectId: currentObject.objectId });
+
             this._activeObject = null;
             const newGroup = new Group(objects);
             this.setActiveGroup(newGroup);
@@ -833,7 +825,7 @@ export class Canvas extends EventCenter {
     if (this.brush.type === 10) {
       this._drawPenPath(this.penPath, 1);
     } else if (this.brush.type === 11) {
-      this._drawPenPath(this.graffitiPath[this.graffitiPath.length - 1], 1);
+      this._drawPenPath(this.graffitiPath, 1);
     } else if (this.brush.type !== 0) {
       this[_drawFunctionList[this.brush.type]](this.start, this.temp, 1);
     }
@@ -1052,24 +1044,21 @@ export class Canvas extends EventCenter {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
+      this.contextTop.beginPath();
       if (end.x >= start.x) {
-        this.contextTop.beginPath();
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x - this.brush.headlen, start.y);
-        this.contextTop.beginPath();
-        this.contextTop.moveTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
+        this.contextTop.lineTo(end.x - 15, start.y);
+        this.contextTop.lineTo(end.x - 15, start.y + 15);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x - this.brush.headlen, start.y - this.brush.headlen);
-        this.contextTop.LineTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
+        this.contextTop.lineTo(end.x - 15, start.y - 15);
+        this.contextTop.lineTo(end.x - 15, start.y);
       } else {
-        this.contextTop.beginPath();
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x + this.brush.headlen, start.y);
-        this.contextTop.beginPath();
-        this.contextTop.moveTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
+        this.contextTop.lineTo(end.x + 15, start.y);
+        this.contextTop.lineTo(end.x + 15, start.y + 15);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x + this.brush.headlen, start.y - this.brush.headlen);
-        this.contextTop.lineTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
+        this.contextTop.lineTo(end.x + 15, start.y - 15);
+        this.contextTop.lineTo(end.x + 15, start.y);
       }
       this.contextTop.closePath();
       this.contextTop.stroke();
@@ -1081,7 +1070,7 @@ export class Canvas extends EventCenter {
         stroke: this.brush.stroke,
         strokeWidth: this.brush.strokeWidth || 1,
         direction: end.x - start.x,
-        headlen: this.brush.headlen || 15,
+        headlen: 15,
       });
       arrow.on('added', () => {
         console.log('arrow被添加了');
@@ -1100,7 +1089,8 @@ export class Canvas extends EventCenter {
     const text = new FabricObjects.Text({
       left: target.x,
       top: target.y,
-      size: 20,
+      size: this.brush.size,
+      font: this.brush.font,
       text: this.brush.text,
       fill: this.brush.fill,
       stroke: this.brush.stroke,
@@ -1164,15 +1154,16 @@ export class Canvas extends EventCenter {
       this.add(true, penPath);
       this.penPath = [];
     } else {
-      this.contextCache.lineWidth = this.brush.strokeWidth;
-      this.contextCache.strokeStyle = this.brush.stroke;
-      for (let i = 1; i < penPathList.length; i++) {
-        this.contextCache.beginPath();
-        this.contextCache.moveTo(penPathList[i - 1].x, penPathList[i - 1].y);
-        this.contextCache.lineTo(penPathList[i].x, penPathList[i].y);
-        this.contextCache.closePath();
-        this.contextCache.stroke();
-      }
+      const graffitiPath = new FabricObjects.Pen({
+        left: (maxx + minx) / 2,
+        top: (maxy + miny) / 2,
+        width: maxx - minx,
+        height: maxy - miny,
+        penPath: penPathList,
+        stroke: this.brush.stroke,
+        strokeWidth: this.brush.strokeWidth || 1,
+      });
+      this._draw(this.contextCache, graffitiPath);
       while (this.graffitiPath.length) {
         this.graffitiPath.pop();
       }
@@ -1195,7 +1186,7 @@ export class Canvas extends EventCenter {
           }
           if (temp[2] === 'modified') {
             i.saveState();
-            this.modifiedAgainList.push([temp[0], { ...i.originalState }, temp[2]]);
+            this.modifiedAgainList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
             for (const k in temp[1]) {
               i[k] = temp[1][k];
             }
@@ -1203,8 +1194,7 @@ export class Canvas extends EventCenter {
             this.modifiedAgainList.push(temp);
             i.visible = false;
           }
-
-          i.emit('object:modified', { target: i });
+          this.emit('object:modified', { target: i });
           break;
         }
       }
@@ -1225,7 +1215,7 @@ export class Canvas extends EventCenter {
           }
           if (temp[2] === 'modified') {
             i.saveState();
-            this.modifiedList.push([temp[0], { ...i.originalState }, temp[2]]);
+            this.modifiedList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
             for (const k in temp[1]) {
               i[k] = temp[1][k];
             }
@@ -1233,7 +1223,7 @@ export class Canvas extends EventCenter {
             this.modifiedList.push(temp);
             i.visible = true;
           }
-          i.emit('object:modified', { target: i });
+          this.emit('object:modified', { target: i });
           break;
         }
       }
@@ -1271,11 +1261,13 @@ export class Canvas extends EventCenter {
       this.discardActiveObject();
     }
     this.emit('sendLock', { objectId: object.objectId });
+
     object.on('canLock', () => {
       this._activeObject = object;
       object.setActive(true);
       this.renderAll();
     });
+    object.emit('canLock');
     this.renderAll();
 
     // this.emit('object:selected', { target: object, e });
@@ -1284,6 +1276,8 @@ export class Canvas extends EventCenter {
   }
   /** 记录当前物体的变换状态 */
   _setupCurrentTransform(e: MouseEvent, target: FabricObject) {
+    console.log('abc', e);
+
     let action = 'drag',
       corner,
       pointer = Util.getPointer(e, target.canvas.upperCanvasEl);
@@ -1720,7 +1714,7 @@ export class Canvas extends EventCenter {
     obj.setupState();
     obj.setCoords();
     obj.canvas = this;
-    obj.objectId = this.userId + new Date().valueOf();
+    obj.objectId = this.userId + `${new Date().valueOf()}`;
     if (isFirst) {
       this.emit('object:added', { target: obj });
       obj.emit('added');
