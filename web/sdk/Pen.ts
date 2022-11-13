@@ -4,7 +4,7 @@ import { Util } from './Util';
 
 /** 自由线条类 */
 export class Pen extends FabricObject {
-  public type: string = 'text';
+  public type: string = 'Pen';
   public penPath: [] = [];
   public start;
   constructor(options: any) {

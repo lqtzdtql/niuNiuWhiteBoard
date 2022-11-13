@@ -8,7 +8,7 @@ import { EventCenter } from './EventCenter';
 /** 物体基类，有一些共同属性和方法 */
 export class FabricObject extends EventCenter {
   /** 物体类型标识 */
-  public type: string = 'object';
+  public type: string = 'Object';
   /** 是否处于激活态，也就是是否被选中 */
   public active: boolean = false;
   /** 是否可见 */
@@ -86,17 +86,18 @@ export class FabricObject extends EventCenter {
   /** 物体被拖蓝选区保存的时候需要临时保存下 hasControls 的值 */
   public orignHasControls: boolean = true;
   public stateProperties: string[] = (
-    'top left width height scaleX scaleY ' +
+    'type top left width height scaleX scaleY ' +
     'flipX flipY angle cornerSize fill originX originY ' +
     'stroke strokeWidth ' +
-    'borderWidth transformMatrix visible'
+    'borderWidth transformMatrix visible ' +
+    'objectId'
   ).split(' ');
   public timestamp: number = 0;
   public objectId: string = '';
   public isLocked: boolean = false;
   public isAddingAnimate: boolean = false;
   public animateStart;
-  public animateEnd;
+  public;
 
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheContext: CanvasRenderingContext2D;

@@ -3,7 +3,7 @@ import { FabricObject } from './FabricObject';
 
 /** 矩形类 */
 export class Rect extends FabricObject {
-  public type: string = 'rect';
+  public type: string = 'Rect';
   /** 圆角 rx */
   public rx: number = 0;
   /** 圆角 ry */

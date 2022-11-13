@@ -3,7 +3,7 @@ import { Util } from './Util';
 
 /** 圆形类 */
 export class Round extends FabricObject {
-  public type: string = 'round';
+  public type: string = 'Round';
   public roundAngle: number = 360;
   constructor(options: any) {
     super(options);

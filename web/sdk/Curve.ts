@@ -2,7 +2,7 @@ import { FabricObject } from './FabricObject';
 
 /** 曲线类 */
 export class Curve extends FabricObject {
-  public type: string = 'curve';
+  public type: string = 'Curve';
   public ca: number = 0;
   public ch: number = 0;
   constructor(options: any) {
