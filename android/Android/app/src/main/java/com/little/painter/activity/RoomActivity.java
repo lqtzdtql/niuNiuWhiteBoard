@@ -69,8 +69,8 @@ public class RoomActivity extends BaseActivity {
         LinearLayout footLayout = (LinearLayout) findViewById(R.id.ll_foot);
         mChooseLayout = (LinearLayout) findViewById(R.id.ll_choose_panel);
         mSaveMenuLayout = (LinearLayout) findViewById(R.id.ll_setting_menu);
-        mSaveMenuManager = new SaveMenuManager(this, mSaveMenuLayout);
-        mFootUIManager = new FootUIManager(this, footLayout);
+        mSaveMenuManager = new SaveMenuManager(mSaveMenuLayout);
+        mFootUIManager = new FootUIManager(footLayout);
         mChooseUIManager = new ChooseUIManager(this, mChooseLayout);
     }
 
@@ -227,17 +227,17 @@ public class RoomActivity extends BaseActivity {
     private final ArtBoard.ShapeChangeListener mShapeChangeListener = new ArtBoard.ShapeChangeListener() {
         @Override
         public void onAddShape(Shape shape) {
-            mWhiteBoardConn.addShape(shape);
+            // mWhiteBoardConn.addShape(shape);
         }
 
         @Override
         public void onMoveShape(Shape shape) {
-            mWhiteBoardConn.moveShape(shape);
+            // mWhiteBoardConn.moveShape(shape);
         }
 
         @Override
         public void onDeleteShape(Shape shape) {
-            mWhiteBoardConn.deleteShape(shape);
+            // mWhiteBoardConn.deleteShape(shape);
         }
     };
 
@@ -272,7 +272,7 @@ public class RoomActivity extends BaseActivity {
             } else {
                 mChooseLayout.setVisibility(View.VISIBLE);
                 mChooseUIManager.ShowColorUi();
-                mChooseUIManager.setColorCallBack(color -> mArtBoard.setBrushColor(color));
+                mChooseUIManager.setColorChangeCall(color -> mArtBoard.setBrushColor(color));
             }
         }
     };
@@ -309,20 +309,20 @@ public class RoomActivity extends BaseActivity {
                 // 接口回调
                 mChooseUIManager.setPageChangeCall(new PageChangeCall() {
                     @Override
-                    public void PageAddCall(int pagenum, int pageindex) {
+                    public void onPageAddCall(int pagenum, int pageindex) {
                         mArtBoard.setCurrentPageNum(pagenum);
                         mArtBoard.setCurrentPageIndex(pageindex);
                         mArtBoard.drawNewImage();
                     }
 
                     @Override
-                    public void PagePreCall(int pageindex) {
+                    public void onPagePreCall(int pageindex) {
                         mArtBoard.setCurrentPageIndex(pageindex);
                         mArtBoard.turnToPrePage();
                     }
 
                     @Override
-                    public void PageNextCall(int pageindex) {
+                    public void onPageNextCall(int pageindex) {
                         mArtBoard.setCurrentPageIndex(pageindex);
                         mArtBoard.turnToNextPage();
                     }

@@ -1,6 +1,5 @@
 package com.little.painter.manager;
 
-import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
 
@@ -8,28 +7,25 @@ import com.little.painter.Constants;
 import com.little.painter.R;
 
 public class SaveMenuManager implements View.OnClickListener {
+    private View mView;
+    private TextView mTvSavePng;
+    private TextView mTvSaveSvg;
+    private SaveBtnClickListener mSaveBtnClickListener;
 
-    Context mContext;
-    View mView;
-    TextView SavePngTv;
-    TextView SaveSvgTv;
-    SaveBtnClickListener mSaveBtnClickListener;
-
-    public SaveMenuManager(Context mContext, View mView) {
-        this.mContext = mContext;
+    public SaveMenuManager(View mView) {
         this.mView = mView;
         initView();
         initEvent();
     }
 
     private void initEvent() {
-        SaveSvgTv.setOnClickListener(this);
-        SavePngTv.setOnClickListener(this);
+        mTvSaveSvg.setOnClickListener(this);
+        mTvSavePng.setOnClickListener(this);
     }
 
     private void initView() {
-        SavePngTv = (TextView) mView.findViewById(R.id.tv_save_png);
-        SaveSvgTv = (TextView) mView.findViewById(R.id.tv_save_svg);
+        mTvSavePng = (TextView) mView.findViewById(R.id.tv_save_png);
+        mTvSaveSvg = (TextView) mView.findViewById(R.id.tv_save_svg);
     }
 
     @Override

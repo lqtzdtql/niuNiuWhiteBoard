@@ -1,6 +1,6 @@
 import download from '@Public/static/img/下载.png';
-import share from '@Public/static/img/分享.png';
 import friends from '@Public/static/img/好友.png';
+import upload from '@Public/static/img/导入.png';
 import newPage from '@Public/static/img/新建页面.png';
 import page from '@Public/static/img/纸张.png';
 import quit from '@Public/static/img/退出.png';
@@ -10,7 +10,7 @@ import { typeMap } from '@Src/constants/Constants';
 import { IParticipant, IRoom } from '@Src/service/home/IHomeService';
 import { IUserInfo } from '@Src/service/login/ILoginService';
 import { exitRoom, getChatRoomToken } from '@Src/service/room/RoomService';
-import { List, Popover, Switch } from 'antd';
+import { Button, Form, Input, List, Popover, Switch } from 'antd';
 import { runInAction } from 'mobx';
 import QNRTC, {
   QNConnectionDisconnectedInfo,
@@ -21,11 +21,12 @@ import QNRTC, {
   QNRemoteTrack,
   QNRTCClient,
 } from 'qnweb-rtc';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Context } from './context';
 import { Stream } from './stream';
 
-interface TitleProps {
+export interface TitleProps {
   roomInfo: IRoom;
   userInfo: IUserInfo;
 }
@@ -41,9 +42,17 @@ export const Title = (props: TitleProps) => {
   const userInfo = props.userInfo;
 
   const navigate = useNavigate();
-  const [index, setIndex] = useState(1);
+  const [listIndex, setListIndex] = useState(0);
   const [openMicrophone, setOpenMicrophone] = useState(true);
+  const { roomRef } = useContext(Context);
+  const { partic } = useContext(Context);
+  const { boards } = useContext(Context);
+  const { checked } = useContext(Context);
+  const { setChecked } = useContext(Context);
+  const { canvasClass } = useContext(Context);
   // const [openHear, setOpenHear] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
 
   useEffect(() => {
     joinRTCRoom();
@@ -53,15 +62,30 @@ export const Title = (props: TitleProps) => {
     return (
       <List
         size="small"
-        dataSource={roomInfo.participants?.filter((item) => item.permission !== 'host')}
+        dataSource={partic?.filter((item) => item.permission !== 'host')}
         renderItem={(Item: IParticipant) => <List.Item>{Item.name}</List.Item>}
       ></List>
     );
   };
 
-  // const BoardList = () => {
-  //   return <List size="small" dataSource={data} renderItem={(item: number) => <List.Item>页面{item}</List.Item>} />;
-  // };
+  const BoardList = () => {
+    return (
+      <List
+        size="small"
+        dataSource={boards}
+        renderItem={(item: string, index: number) => (
+          <List.Item onClick={() => changeBoard(item, index)}>页面{index + 1}</List.Item>
+        )}
+      />
+    );
+  };
+
+  const changeBoard = (canvasId: string, index: number) => {
+    setListIndex(index + 1);
+    canvasClass.current = roomRef.current.getCanvas(canvasId);
+    roomRef.current.switchCanvas(canvasId);
+    setListOpen(false);
+  };
 
   const joinRTCRoom = async () => {
     const response = await getChatRoomToken(roomInfo.uuid);
@@ -197,7 +221,11 @@ export const Title = (props: TitleProps) => {
 
   const quitRTCRoom = async () => {
     await client.leave();
+    sessionStorage.removeItem('boards');
     const response = await exitRoom(roomInfo.uuid);
+
+    roomRef.current.kickOutRoom(userInfo.uuid);
+    roomRef.current.closeWs();
     if (response.code === 200) {
       navigate('/home', { replace: true });
     }
@@ -217,31 +245,97 @@ export const Title = (props: TitleProps) => {
     }
   };
 
+  function downloadTXT(filename: string, text: string, format: string, isImport: boolean) {
+    const link = document.createElement('a');
+    if (isImport) {
+      link.setAttribute('href', `data:text/${format};charset=utf-8,${encodeURIComponent(text)}`);
+    } else {
+      // "\ ufeff" to solve the problem of CSV Chinese garbled code
+      const blob = new Blob([`\ufeff${text}`], {
+        type: `data:text/${format};charset=utf-8`,
+      });
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+    }
+    link.setAttribute('download', filename);
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const onFinish = (values: any) => {
+    roomRef.current.importCanvas(canvasClass.current.canvasId, values.data);
+    setOpen(false);
+  };
+  const handleOpen = (newOpen: boolean) => {
+    setOpen(newOpen);
+  };
+  const handleListOpen = (newOpen: boolean) => {
+    setListOpen(newOpen);
+  };
+
   return (
     <div className="title">
       <img src={quit} onClick={quitRTCRoom} />
       <h3 className="room-name">
-        {typeMap.get(roomInfo.type)}:{roomInfo.name}的页面{index}
+        {typeMap.get(roomInfo.type)}:{roomInfo.name} {listIndex > 0 ? `的页面${listIndex}` : ''}
       </h3>
       <Switch
+        checked={checked}
         checkedChildren="协作模式"
         unCheckedChildren="只读模式"
         defaultChecked
+        onChange={() => {
+          roomRef.current.modifyOnlyRead();
+        }}
         disabled={userInfo.name !== roomInfo.host_name}
       />
-
       <Popover content={<ParticipantsList />} title={`主持人:${roomInfo.host_name}`} trigger="click" placement="bottom">
         <img className="room-title-item" src={friends} />
       </Popover>
       {/* <img id="player" className="room-title-item" src={openHear ? hear : muteHear} onClick={changeHear} /> */}
       <img className="room-title-item" src={openMicrophone ? microphone : muteMicrophone} onClick={changeMicrophone} />
-      <img className="room-title-item" src={download} />
-      <img className="room-title-item" src={share} />
-      <img className="room-title-item" src={newPage} />
+      <img
+        className="room-title-item"
+        src={download}
+        onClick={() => {
+          const canvasData = roomRef.current.exportCanvas(canvasClass.current.canvasId);
+          downloadTXT(`${canvasClass.current.canvasId}.txt`, canvasData, 'plain', true);
+        }}
+      />
+
       <Popover
-        //  content={
-        // // <BoardList />
-        // }
+        content={
+          <Form onFinish={onFinish}>
+            <Form.Item name="data">
+              <Input />
+            </Form.Item>
+            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+              <Button type="primary" htmlType="submit">
+                确定
+              </Button>
+            </Form.Item>
+          </Form>
+        }
+        onOpenChange={handleOpen}
+        open={open}
+        trigger="click"
+      >
+        <img className="room-title-item" src={upload} />
+      </Popover>
+      {/* <img className="room-title-item" src={share} /> */}
+      <img
+        className="room-title-item"
+        src={newPage}
+        onClick={() => {
+          roomRef.current.createCanvas();
+        }}
+      />
+      <Popover
+        open={listOpen}
+        onOpenChange={handleListOpen}
+        content={<BoardList />}
         trigger="click"
         placement="bottomRight"
       >

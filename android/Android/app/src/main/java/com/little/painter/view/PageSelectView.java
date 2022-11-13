@@ -28,7 +28,6 @@ public class PageSelectView extends LinearLayout implements View.OnClickListener
         this(context, attrs, 0);
     }
 
-
     public PageSelectView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         LayoutInflater.from(context).inflate(R.layout.add_page_layout, this);
@@ -76,7 +75,7 @@ public class PageSelectView extends LinearLayout implements View.OnClickListener
                 mPageIndex = mPageNum;
                 mPageNumText.setText(mPageIndex + "");
                 if (mPageComponentClickListener != null) {
-                    mPageComponentClickListener.AddPageClicked(mPageNum, mPageIndex);
+                    mPageComponentClickListener.onAddPageClicked(mPageNum, mPageIndex);
                 }
                 break;
             case R.id.id_pre_page:
@@ -85,7 +84,7 @@ public class PageSelectView extends LinearLayout implements View.OnClickListener
                     mPageIndex--;
                     mPageNumText.setText(mPageIndex + "");
                     if (mPageComponentClickListener != null) {
-                        mPageComponentClickListener.PrePageClicked(mPageIndex);
+                        mPageComponentClickListener.onPrePageClicked(mPageIndex);
                     }
                 }
                 break;
@@ -98,7 +97,7 @@ public class PageSelectView extends LinearLayout implements View.OnClickListener
                     mPageIndex++;
                     mPageNumText.setText(mPageIndex + "");
                     if (mPageComponentClickListener != null) {
-                        mPageComponentClickListener.NextPageClicked(mPageIndex);
+                        mPageComponentClickListener.onNextPageClicked(mPageIndex);
                     }
                 }
                 break;
@@ -113,11 +112,11 @@ public class PageSelectView extends LinearLayout implements View.OnClickListener
 
     public interface PageComponentClickListener {
 
-        void AddPageClicked(int pagenum, int pageindex);
+        void onAddPageClicked(int pagenum, int pageindex);
 
-        void PrePageClicked(int pageindex);
+        void onPrePageClicked(int pageindex);
 
-        void NextPageClicked(int pageindex);
+        void onNextPageClicked(int pageindex);
 
     }
 }

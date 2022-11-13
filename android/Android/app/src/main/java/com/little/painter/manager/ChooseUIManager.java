@@ -5,7 +5,7 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 
 import com.little.painter.Constants;
-import com.little.painter.callback.ColorCallBack;
+import com.little.painter.callback.ColorChangeCall;
 import com.little.painter.callback.PageChangeCall;
 import com.little.painter.callback.ShapeChangeCall;
 import com.little.painter.callback.SizeChangeCall;
@@ -17,7 +17,7 @@ public class ChooseUIManager {
     private final Context mContext;
     private final LinearLayout mView;
     private SizeChangeCall mCall;
-    private ColorCallBack mColorCallBack;
+    private ColorChangeCall mColorChangeCall;
     private ShapeChangeCall mShapeChangeCall;
     private PageChangeCall mPageChangeCall;
 
@@ -63,18 +63,16 @@ public class ChooseUIManager {
             public void onStopTrackingTouch(SeekBar seekBar) {
                 // 将停下来时候的值作为画笔的当前粗细大小
                 int currentnum = seekBar.getProgress();
-                mCall.callBySizeChange(currentnum);
+                mCall.onSizeChanged(currentnum);
             }
         });
     }
 
     /**
      * 注册颜色修改回调
-     *
-     * @param back
      */
-    public void setColorCallBack(ColorCallBack back) {
-        this.mColorCallBack = back;
+    public void setColorChangeCall(ColorChangeCall call) {
+        this.mColorChangeCall = call;
     }
 
     /**
@@ -87,7 +85,7 @@ public class ChooseUIManager {
         mView.addView(cp, lp);
         cp.setColorChangeCall(color -> {
             // 将选中的值作为画笔的颜色
-            mColorCallBack.setChangeColor(color);
+            mColorChangeCall.onColorChanged(color);
         });
     }
 
@@ -109,7 +107,7 @@ public class ChooseUIManager {
         lp.setMargins(30, 30, 10, 30);
         mView.addView(shapeSelectView, lp);
         shapeSelectView.setKind(currentkind);
-        shapeSelectView.setKindBtnClickedListener(kind -> mShapeChangeCall.CallByShapeChange(kind));
+        shapeSelectView.setKindBtnClickedListener(kind -> mShapeChangeCall.onShapeChanged(kind));
 
     }
 
@@ -129,18 +127,18 @@ public class ChooseUIManager {
         pv.setPageIndex(currentpageindex);
         pv.SetPageComponentClickListener(new PageSelectView.PageComponentClickListener() {
             @Override
-            public void AddPageClicked(int pagenum, int pageindex) {
-                mPageChangeCall.PageAddCall(pagenum, pageindex);
+            public void onAddPageClicked(int pagenum, int pageindex) {
+                mPageChangeCall.onPageAddCall(pagenum, pageindex);
             }
 
             @Override
-            public void PrePageClicked(int pageindex) {
-                mPageChangeCall.PagePreCall(pageindex);
+            public void onPrePageClicked(int pageindex) {
+                mPageChangeCall.onPagePreCall(pageindex);
             }
 
             @Override
-            public void NextPageClicked(int pageindex) {
-                mPageChangeCall.PageNextCall(pageindex);
+            public void onNextPageClicked(int pageindex) {
+                mPageChangeCall.onPageNextCall(pageindex);
             }
         });
     }

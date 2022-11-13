@@ -1,22 +1,20 @@
 package com.little.painter.manager;
 
-import android.content.Context;
 import android.view.View;
 import android.widget.ImageButton;
 
 import com.little.painter.R;
 
 public class FootUIManager implements View.OnClickListener {
-    Context mContext;
-    View mView;
-    ImageButton mBrushSizeBtn;
-    ImageButton mBrushColorBtn;
-    ImageButton mAddPageBtn;
-    ImageButton mCutPathBtn;
-    ImageButton mEraserBtn;
-    ImageButton mShapeBtn;
+    private View mView;
+    private ImageButton mBrushSizeBtn;
+    private ImageButton mBrushColorBtn;
+    private ImageButton mAddPageBtn;
+    private ImageButton mCutPathBtn;
+    private ImageButton mEraserBtn;
+    private ImageButton mShapeBtn;
 
-    boolean isShow = false;
+    private boolean mIsShow = false;
     private SizeBtnOnclickListener mSizeBtnOnclickListener;
     private ColorBtnOnclickListener mColorBtnOnclickListener;
     private ShapeBtnClickListener mShapeBtnClickListener;
@@ -24,8 +22,7 @@ public class FootUIManager implements View.OnClickListener {
     private EraserBtnOnClickListener mEraserBtnOnClickListener;
     private ShapeChooseBtnOnclickListener mShapeChooseBtnOnclickListener;
 
-    public FootUIManager(Context mContext, View mView) {
-        this.mContext = mContext;
+    public FootUIManager(View mView) {
         this.mView = mView;
         initView();
         initEvent();
@@ -55,24 +52,24 @@ public class FootUIManager implements View.OnClickListener {
             case R.id.bt_brush_size_choose:
                 // 选择宽度功能
                 if (mSizeBtnOnclickListener != null) {
-                    mSizeBtnOnclickListener.Clicked(isShow);
+                    mSizeBtnOnclickListener.Clicked(mIsShow);
                     // 状态取反
-                    isShow = !isShow;
+                    mIsShow = !mIsShow;
                 }
                 break;
 
             case R.id.bt_color_choose:
                 // 选择颜色功能
                 if (mColorBtnOnclickListener != null) {
-                    mColorBtnOnclickListener.ColorClicked(isShow);
-                    isShow = !isShow;
+                    mColorBtnOnclickListener.ColorClicked(mIsShow);
+                    mIsShow = !mIsShow;
                 }
                 break;
             case R.id.bt_add_canvas:
                 // 添加多页功能
                 if (mPageBtnOnClickListener != null) {
-                    mPageBtnOnClickListener.PageClicked(isShow);
-                    isShow = !isShow;
+                    mPageBtnOnClickListener.PageClicked(mIsShow);
+                    mIsShow = !mIsShow;
                 }
                 break;
             case R.id.bt_cut_path:
@@ -90,8 +87,8 @@ public class FootUIManager implements View.OnClickListener {
             case R.id.bt_select_shape:
                 // 选择图形功能
                 if (mShapeBtnClickListener != null) {
-                    mShapeBtnClickListener.onShapeBtnClicked(isShow);
-                    isShow = !isShow;
+                    mShapeBtnClickListener.onShapeBtnClicked(mIsShow);
+                    mIsShow = !mIsShow;
                 }
                 break;
             default:

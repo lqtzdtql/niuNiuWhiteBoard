@@ -127,9 +127,9 @@ const Home: React.FC = () => {
         <Button className="create-button" type="primary" onClick={showCreateModal}>
           创建房间
         </Button>
-        <Button className="join-button" type="primary" onClick={showJoinModal}>
+        {/* <Button className="join-button" type="primary" onClick={showJoinModal}>
           加入房间
-        </Button>
+        </Button> */}
         <Button className="refresh-button" type="primary" onClick={appendData}>
           刷新
         </Button>
@@ -157,7 +157,7 @@ const Home: React.FC = () => {
           />
         </Modal>
 
-        <Modal
+        {/* <Modal
           centered
           destroyOnClose
           title="加入房间"
@@ -169,7 +169,7 @@ const Home: React.FC = () => {
         >
           <Input placeholder="房间号" ref={nameRef} />
           <Input className="modal-item" placeholder="密码(可不填)" />
-        </Modal>
+        </Modal> */}
       </div>
       <List className="list">
         <VirtualList data={data} height={ContainerHeight} itemHeight={47} itemKey="number" onScroll={onScroll}>

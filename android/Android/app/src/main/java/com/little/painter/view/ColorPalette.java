@@ -43,7 +43,7 @@ public class ColorPalette extends LinearLayout {
 
     private void initEvent() {
         mGridview.setOnItemClickListener((parent, view, position, id) -> {
-            mCall.callByColorChange(Constants.colors[position]);
+            mCall.onColorChanged(Constants.colors[position]);
         });
     }
 

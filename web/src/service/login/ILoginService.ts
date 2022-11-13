@@ -9,7 +9,6 @@ export interface ILoginResponse extends IBaseResponse {
 }
 
 export interface IUserInfo {
-  id: number;
   uuid: string;
   name: string;
   mobile: string;

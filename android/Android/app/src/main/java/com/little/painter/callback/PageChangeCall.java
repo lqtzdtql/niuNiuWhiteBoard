@@ -1,14 +1,7 @@
 package com.little.painter.callback;
 
-/**
- * Created by user on 2016/8/8.
- * 页面相关操作回调接口
- */
 public interface PageChangeCall {
-
-    void PageAddCall(int pagenum, int pageindex);
-
-    void PagePreCall(int pageindex);
-
-    void PageNextCall(int pageindex);
+    void onPageAddCall(int pagenum, int pageindex);
+    void onPagePreCall(int pageindex);
+    void onPageNextCall(int pageindex);
 }
