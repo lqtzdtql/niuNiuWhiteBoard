@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'com.liuyue.painter'
+    namespace 'com.little.painter'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.liuyue.painter"
+        applicationId "com.little.painter"
         minSdk 26
         targetSdk 32
         versionCode 1
@@ -42,5 +42,5 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
 
     implementation "de.hdodenhof:circleimageview:3.1.0"
-    implementation files('libs/dom4j-1.6.1.jar')
+    implementation "org.dom4j:dom4j:2.0.3"
 }

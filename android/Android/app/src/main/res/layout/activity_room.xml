@@ -49,12 +49,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.liuyue.painter.view.ArtBoard
+        <com.little.painter.view.ArtBoard
             android:id="@+id/paint_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-        </com.liuyue.painter.view.ArtBoard>
+        </com.little.painter.view.ArtBoard>
 
         <LinearLayout
             android:id="@+id/ll_choose_panel"
