@@ -51,7 +51,7 @@ cd niuNiuWhiteBoard/backend/niuNiuSDKBackend
 go build -o SDKServer cmd/main.go
 
 cd niuNiuWhiteBoard/backend/niuNiuWhiteBoardBackend
-go build -o SDKServer cmd/main.go
+go build -o littlepainter cmd/main.go
 ```
 
 在niuNiuSDKBackend和niuNiuWhiteBoardBackend之下，各有一个models.sql。在mysql中建立两个数据库，database niuNiuSDK和database niuNiuWhiteBoard，分别导入对应目录下的models.sql。
