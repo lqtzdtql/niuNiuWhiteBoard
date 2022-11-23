@@ -43,6 +43,8 @@ http://81.68.68.216:10000/
 前端设计如下
 ![image](https://user-images.githubusercontent.com/84149464/203592684-197aeee6-8223-4a60-9319-957627f61424.png)
 
+前端架构如下（草图）
+![image](https://user-images.githubusercontent.com/84149464/203596519-08d752a5-f0cb-4c63-b5ee-c1dc84afd923.png)
 
 ## Web端演示视频
 
