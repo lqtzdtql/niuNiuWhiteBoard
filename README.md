@@ -72,7 +72,7 @@ go build -o littlepainter cmd/main.go
 
 使用Android Studio构建运行
 
-##后续计划
+## 后续计划
 
 1. UI重新设计。
 2. 整体代码重构，提升代码质量。
