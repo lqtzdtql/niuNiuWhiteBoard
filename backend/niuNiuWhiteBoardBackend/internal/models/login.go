@@ -168,10 +168,8 @@ func Info(c *gin.Context) {
 	uuid := c.Param("uuid")
 	db := c.MustGet("db").(*xorm.Engine)
 
-	user := User{}
 	userRow := UserRow{}
-	user.UUID = uuid
-	has, err := db.Table(UsersTable).Where("uuid=?", user.UUID).Get(&userRow)
+	has, err := db.Table(UsersTable).Where("uuid=?", uuid).Get(&userRow)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "服务器错误", "code": 501})
 		log.Logger.Error("server database error", log.Any("server database error", err.Error()))
@@ -179,13 +177,18 @@ func Info(c *gin.Context) {
 	}
 	if !has {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "用户不存在", "code": 401})
-		log.Logger.Warn("user not exist", log.Any("user_uuid", user.UUID))
+		log.Logger.Warn("user not exist", log.Any("user_uuid", uuid))
 		return
 	}
 	//隐藏手机号中间数字
 	s := userRow.Mobile
 	userRow.Mobile = string([]byte(s)[0:3]) + "****" + string([]byte(s)[7:])
-	c.JSON(http.StatusOK, userRow)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "注册成功",
+		"user_info": userRow,
+		"code":      200,
+	})
 	return
 }
 

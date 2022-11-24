@@ -52,10 +52,11 @@ func RunSocket(c *gin.Context) {
 		return
 	}
 	if !has {
+		database.MEngine.Table(models.RoomTable).Delete(&models.Room{Name: clientClaims.RoomName})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "用户不存在", "code": 401})
 		log.Logger.Warn("participant not exit", log.Any("participant not exit", clientClaims.UserName))
 		return
 	}
-	log.Logger.Info("participant info", log.Any("participant info", participant))
 
 	room := models.Room{}
 	has, err = database.MEngine.Table(models.RoomTable).Where("name=?", clientClaims.RoomName).Get(&room)
@@ -64,9 +65,18 @@ func RunSocket(c *gin.Context) {
 		log.Logger.Error("database error", log.Any("database error", err.Error()))
 		return
 	}
+	if !has {
+		database.MEngine.Table(models.ParticipantTable).Delete(&participant)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "房间不存在", "code": 401})
+		log.Logger.Warn("participant not exit", log.Any("room not exit", clientClaims.RoomName))
+		return
+	}
+
+	log.Logger.Info("participant info", log.Any("participant info", participant))
+
 	log.Logger.Info("room info", log.Any("room info", room))
 	if _, ok := server.MyServer.Clients[participant.UUID]; ok {
-		log.Logger.Debug("websocket has build, not build again", log.Any("websocket has build, not build again", participant.UUID))
+		log.Logger.Warn("websocket has build, not build again", log.Any("websocket has build, not build again", participant.UUID))
 		return
 	}
 

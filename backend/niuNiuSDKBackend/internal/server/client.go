@@ -47,7 +47,9 @@ func (c *Client) Read() {
 		}
 		msg := &models.Message{}
 		json.Unmarshal(message, msg)
-		log.Logger.Debug("receive message", log.Any("receive message", msg))
+		if msg.ContentType != models.HEAT_BEAT {
+			log.Logger.Debug("receive message", log.Any("receive message", msg))
+		}
 		// pong
 		if msg.ContentType == models.HEAT_BEAT {
 			c.HeartbeatTime = time.Now().Unix()

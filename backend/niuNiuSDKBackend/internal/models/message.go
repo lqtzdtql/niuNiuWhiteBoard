@@ -15,6 +15,7 @@ const (
 	CANVAS_LIST       = 11
 	CUSTOMIZE_MESSAGE = 12
 	ENTER_ROOM        = 13
+	HOST_CURRENT      = 14
 )
 
 type Message struct {
@@ -27,7 +28,7 @@ type Message struct {
 	Content      string `json:"content,omitempty"`
 	Timestamp    int64  `json:"timestamp,omitempty"`
 	IsLock       bool   `json:"isLock,omitempty"`
-	ReadOnly     bool   `json:"readOnly,omitempty"`
+	OnlyRead     bool   `json:"onlyRead,omitempty"`
 	UserName     string `json:"userName,omitempty"`
 }
 
@@ -67,11 +68,17 @@ type DrawingLockRes struct {
 // CREATE_BOARD
 type CreateBoardRes struct {
 	ContentType int32  `json:"contentType"`
+	UserName    string `json:"userName,omitempty"`
 	Content     string `json:"content"`
 }
 
 type BoardInfo struct {
 	CanvasId string `json:"canvasId"`
+}
+
+type CanvasListRes struct {
+	ContentType int32  `json:"contentType"`
+	Content     string `json:"content"`
 }
 
 // LEAVE_ROOM or ENTER_ROOM
@@ -82,6 +89,12 @@ type LeaveEnterRoomRes struct {
 
 // CUSTOMIZE_MESSAGE
 type CustomizeRes struct {
+	ContentType int32  `json:"contentType"`
+	Content     string `json:"content"`
+}
+
+// HOST_CURRENT
+type HostCanvasIdRes struct {
 	ContentType int32  `json:"contentType"`
 	Content     string `json:"content"`
 }

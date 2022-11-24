@@ -185,9 +185,13 @@ func MessageHandle(ctx context.Context, message []byte, s *Server) {
 		leaveRoom(ctx, msg, s)
 	case models.CUSTOMIZE_MESSAGE:
 		customize(ctx, msg, clients)
+	case models.HOST_CURRENT:
+		getHostCanvasId(ctx, msg, s)
 	default:
 		for _, c := range clients {
-			c.Send <- message
+			if msg.ToRoom == c.RoomUUID && msg.From != c.UUID {
+				c.Send <- message
+			}
 		}
 	}
 }
@@ -213,13 +217,20 @@ func upDateBoard(ctx context.Context, msg *models.Message, s *Server) {
 		ContentType:  msg.ContentType,
 		ToWhiteBoard: msg.ToWhiteBoard,
 	}
+	user := models.Participant{}
+	if _, err := database.MEngine.Table(models.ParticipantTable).Where("uuid = ? ", msg.From).Get(&user); err != nil {
+		log.Logger.Error("get participant info failed", log.Any("get participant info failed", err.Error()))
+	}
+	if user.Permission == models.PermissionHost {
+		err := database.Rdb.Set(ctx, msg.From, msg.ToWhiteBoard, 0).Err()
+		if err != nil {
+			log.Logger.Error("set host canvasId failed", log.Any("set host canvasId failed", err.Error()))
+		}
+	}
 	// 查找数据库，找出该白板内的所有图形
 	objectIds, _ := database.Rdb.SMembers(ctx, msg.ToWhiteBoard).Result()
 	var contentString = make([]string, 0)
 	for _, objectId := range objectIds {
-		if objectId == "" {
-			continue
-		}
 		contentAndTime := models.ObjectInRedis{}
 		obj, _ := database.Rdb.Get(ctx, objectId).Result()
 		json.Unmarshal([]byte(obj), &contentAndTime)
@@ -239,6 +250,7 @@ func switchBoard(ctx context.Context, msg *models.Message, s *Server, clients []
 		ContentType:  msg.ContentType,
 		ToWhiteBoard: msg.ToWhiteBoard,
 	}
+
 	// 查找数据库，找出该白板内的所有图形
 	objectIds, _ := database.Rdb.SMembers(ctx, msg.ToWhiteBoard).Result()
 	var contentString = make([]string, 0)
@@ -252,7 +264,8 @@ func switchBoard(ctx context.Context, msg *models.Message, s *Server, clients []
 	}
 	content, _ := json.Marshal(contentString)
 
-	if msg.ReadOnly {
+	if msg.OnlyRead {
+		log.Logger.Debug("ReadOnly test", log.Any("ReadOnly test", msg.OnlyRead))
 		// SWITCH_BOARD类型的message发给除了发送者以外的该房间的所有人
 		switchBoardRes.Content = string(content)
 		res2others, _ := json.Marshal(switchBoardRes)
@@ -357,6 +370,7 @@ func drawingLock(ctx context.Context, msg *models.Message, s *Server, clients []
 		_, err := database.Rdb.Get(ctx, msg.ObjectId+"lock").Result()
 		// 检查此时是否已经上锁
 		if err == redis.Nil {
+			database.Rdb.Set(ctx, msg.ObjectId+"lock", msg.ObjectId, 0)
 			//不存在锁，给发送者回复的CAN_LOCK中 Islock 为false
 			drawingLock2From := models.DrawingLockRes{
 				ContentType:  models.CAN_LOCK,
@@ -431,6 +445,7 @@ func createBoard(ctx context.Context, msg *models.Message, clients []*Client) {
 	canvasInfo, _ := json.Marshal(models.BoardInfo{CanvasId: canvas.UUID})
 	createCanvas := models.CreateBoardRes{
 		ContentType: msg.ContentType,
+		UserName:    msg.From,
 		Content:     string(canvasInfo),
 	}
 	res, _ := json.Marshal(createCanvas)
@@ -449,9 +464,15 @@ func canvasList(ctx context.Context, msg *models.Message, s *Server) {
 		cavList = append(cavList, cavansId)
 		return nil
 	})
-	canvasList, _ := json.Marshal(cavList)
+	canvList, _ := json.Marshal(cavList)
+	cavListRes := models.CanvasListRes{
+		ContentType: msg.ContentType,
+		Content:     string(canvList),
+	}
+	res, _ := json.Marshal(cavListRes)
+
 	if _, ok := s.Clients[msg.From]; ok {
-		s.Clients[msg.From].Send <- canvasList
+		s.Clients[msg.From].Send <- res
 	}
 }
 
@@ -489,4 +510,19 @@ func customize(ctx context.Context, msg *models.Message, clients []*Client) {
 	log.Logger.Debug("customize test", log.Any("customize test", custRes))
 	res, _ := json.Marshal(custRes)
 	broadcast2All(clients, msg, res)
+}
+
+func getHostCanvasId(ctx context.Context, msg *models.Message, s *Server) {
+	hostCanvasId, err := database.Rdb.Get(ctx, msg.From).Result()
+	if err != nil {
+		log.Logger.Error("get object failed", log.Any("get object failed", err.Error()))
+	}
+	hostCanvasIdRes := models.HostCanvasIdRes{
+		ContentType: msg.ContentType,
+		Content:     hostCanvasId,
+	}
+	res, _ := json.Marshal(hostCanvasIdRes)
+	if _, ok := s.Clients[msg.From]; ok {
+		s.Clients[msg.From].Send <- res
+	}
 }
