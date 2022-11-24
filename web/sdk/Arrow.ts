@@ -12,7 +12,7 @@ export class Arrow extends FabricObject {
   }
 
   _initStateProperties() {
-    this.stateProperties = this.stateProperties.concat(['theta', 'headlen']);
+    this.stateProperties = this.stateProperties.concat(['theta', 'headlen', 'direction']);
   }
 
   _initArrow(options: any) {

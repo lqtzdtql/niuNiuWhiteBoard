@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { FabricObject } from './FabricObject';
 import { Util } from './Util';
 
@@ -50,20 +49,26 @@ export class Group extends FabricObject {
     this.objects.push(object);
     this._calcBounds();
     this._updateObjectsCoords();
+    object.isInGroup = true;
     return this;
   }
   /** 将物体添加到 group 中 */
   add(object: FabricObject) {
+    object.isInGroup = true;
     this.objects.push(object);
     return this;
   }
   /** 将物体从 group 中移除 */
   remove(object: FabricObject) {
+    object.isInGroup = false;
+    object.active = false;
     Util.removeFromArray(this.objects, object);
     return this;
   }
   /** 将物体从组中移除，并重新计算组的大小位置 */
   removeWithUpdate(object: FabricObject) {
+    object.isInGroup = false;
+    object.active = false;
     this._restoreObjectsState();
     Util.removeFromArray(this.objects, object);
     object.setActive(false);
@@ -137,14 +142,14 @@ export class Group extends FabricObject {
     object.hasControls = object.orignHasControls;
     // delete object.__origHasControls;
     object.setActive(false);
-    this.emit('sendUnlock', { objectId: object.objectId });
     object.setCoords();
 
     if (object.hasStateChanged()) {
-      object.canvas.emit('object:modified', { object });
+      console.log('abcde', object);
+      object.canvas.emit('object:modified', { target: object });
+
       object.emit('modified');
     }
-
     return this;
   }
   destroy() {

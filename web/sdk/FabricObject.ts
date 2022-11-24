@@ -50,7 +50,7 @@ export class FabricObject extends EventCenter {
   /** 混合模式 globalCompositeOperation */
   // public fillRule: string = 'source-over';
   /** 物体默认描边颜色，默认无 */
-  public stroke: string;
+  public stroke: string = '';
   /** 物体默认描边宽度 */
   public strokeWidth: number = 1;
   /** 矩阵变换 */
@@ -76,13 +76,13 @@ export class FabricObject extends EventCenter {
   /** 通过像素来检测物体而不是通过包围盒 */
   public perPixelTargetFind: boolean = false;
   /** 物体控制点位置，随时变化 */
-  public oCoords: Coords;
+  public oCoords: Coords = {};
   /** 物体所在的 canvas 画布 */
   public canvas;
   /** 物体执行变换之前的状态 */
-  public originalState;
+  public originalState = {};
   /** 物体所属的组 */
-  public group;
+  public group = null;
   /** 物体被拖蓝选区保存的时候需要临时保存下 hasControls 的值 */
   public orignHasControls: boolean = true;
   public stateProperties: string[] = (
@@ -90,14 +90,14 @@ export class FabricObject extends EventCenter {
     'flipX flipY angle cornerSize fill originX originY ' +
     'stroke strokeWidth ' +
     'borderWidth transformMatrix visible ' +
-    'objectId'
+    'objectId oCoords'
   ).split(' ');
   public timestamp: number = 0;
   public objectId: string = '';
   public isLocked: boolean = false;
   public isAddingAnimate: boolean = false;
   public animateStart;
-  public;
+  public isInGroup: boolean = false;
 
   private _cacheCanvas: HTMLCanvasElement;
   private _cacheContext: CanvasRenderingContext2D;
@@ -194,6 +194,7 @@ export class FabricObject extends EventCenter {
 
   updateLock(isLocked: boolean) {
     this.isLocked = isLocked;
+    this.canvas.renderAll();
   }
   /** 绘制激活物体边框 */
   drawBorders(ctx: CanvasRenderingContext2D): FabricObject {
@@ -440,7 +441,7 @@ export class FabricObject extends EventCenter {
   }
   /** 检测哪个控制点被点击了 */
   _findTargetCorner(e: MouseEvent, offset: Offset): boolean | string {
-    if (!this.hasControls || !this.active) return false;
+    if (!this.hasControls) return false;
 
     let pointer = Util.getPointer(e, this.canvas.upperCanvasEl),
       ex = pointer.x - offset.left,
@@ -603,6 +604,7 @@ export class FabricObject extends EventCenter {
     });
   }
   setActive(active: boolean = false): FabricObject {
+    if (this.isInGroup && !active) return;
     this.active = !!active;
     return this;
   }

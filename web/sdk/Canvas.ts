@@ -19,7 +19,7 @@ const cursorMap = {
   mb: 's-resize',
 };
 export class Canvas extends EventCenter {
-  public canvasId: string;
+  // public canvasId: string;
   /** 画布宽度 */
   public width: number;
   /** 画布高度 */
@@ -80,7 +80,7 @@ export class Canvas extends EventCenter {
   public userId: string;
 
   /** 画布中所有添加的物体 */
-  public _objects: FabricObject[];
+  public _objects: FabricObject[] = [];
   /** 整个画布到上面和左边的偏移量 */
   private _offset: Offset;
   /** 当前物体的变换信息，src 目录下中有截图 */
@@ -250,7 +250,7 @@ export class Canvas extends EventCenter {
         this.deactivateAllWithDispatch();
         // this.renderAll();
       } else {
-        // if (!target.visible || target.isLocked) return;
+        if (!target.visible || target.isLocked) return;
         // 如果是点选操作，接下来就要为各种变换做准备
         target.saveState();
 
@@ -370,7 +370,7 @@ export class Canvas extends EventCenter {
           y = pointer.y;
 
         this._currentTransform.target.isMoving = true;
-        // if (!this._currentTransform.target.active) return;
+        if (!this._currentTransform.target.active) return;
 
         let t = this._currentTransform,
           reset = false;
@@ -771,27 +771,20 @@ export class Canvas extends EventCenter {
 
       // 物体是否与拖蓝选区相交或者被选区包含
       if (
-        (currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||
-          currentObject.isContainedWithinRect(selectionX1Y1, selectionX2Y2)) &&
-        !currentObject.isLocked
+        currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||
+        currentObject.isContainedWithinRect(selectionX1Y1, selectionX2Y2)
       ) {
-        currentObject.on('canLock', () => {
-          currentObject.setActive(true);
-          objects.push(currentObject);
-          if (objects.length === 1) {
-            this.setActiveObject(objects[0], e);
-            this._activeObject = objects[0];
-          } else if (objects.length > 1) {
-            this.emit('sendLock', { objectId: currentObject.objectId });
-
-            this._activeObject = null;
-            const newGroup = new Group(objects);
-            this.setActiveGroup(newGroup);
-            // newGroup.saveCoords();
-            // this.emit('selection:created', { target: newGroup });
-          }
-          this.renderAll();
-        });
+        currentObject.setActive(true);
+        objects.push(currentObject);
+        if (objects.length === 1) {
+          this.setActiveObject(objects[0], e);
+        } else if (objects.length > 1) {
+          const newGroup = new Group(objects);
+          this.setActiveGroup(newGroup);
+          // newGroup.saveCoords();
+          // this.emit('selection:created', { target: newGroup });
+        }
+        this.renderAll();
       }
     }
     this.renderAll();
@@ -844,29 +837,37 @@ export class Canvas extends EventCenter {
       this.contextTop.strokeStyle = this.brush.stroke;
       this.contextTop.beginPath();
       this.contextTop.moveTo(start.x, start.y);
-      this.contextTop.lineTo(end.x, start.y);
+      this.contextTop.lineTo(end.x, end.y);
       this.contextTop.closePath();
       this.contextTop.stroke();
     } else {
       const line = new FabricObjects.Line({
         width: Math.abs(start.x - end.x),
-        left: start.x + (end.x - start.x) / 2,
-        top: start.y,
+        zHeight: Math.abs(start.y - end.y) + 2,
+        height: Math.max(Math.abs(start.y - end.y) + 2, this.brush.strokeWidth),
+        direction: (start.x - end.x) * (start.y - end.y),
+        left: (end.x + start.x) / 2,
+        top: (end.y + start.y) / 2,
         stroke: this.brush.stroke,
         strokeWidth: this.brush.strokeWidth || 1,
       });
+      line.objectId = this.userId + `${new Date().valueOf()}`;
       line.on('added', () => {
-        console.log('直线被添加了');
-        this.modifiedList.push([line.objectId, { ...line.originalState }, 'added']);
-        console.log('modifiedList', this.modifiedList);
+        line.saveState();
+        this.modifiedList.push([line.objectId, JSON.parse(JSON.stringify(line.originalState)), 'added']);
+        this.emit('canRevoke', { canRevoke: true });
       });
       line.on('modified', () => {
-        console.log('直线被修改了');
-        console.log(line);
-        this.modifiedList.push([line.objectId, { ...line.originalState }, 'modified']);
-        console.log('modifiedList', this.modifiedList);
+        line.saveState();
+        this.modifiedList.push([line.objectId, JSON.parse(JSON.stringify(line.originalState)), 'modified']);
+        this.emit('canRevoke', { canRevoke: true });
       });
-      this.add(true, line);
+      line.on('delete', () => {
+        line.saveState();
+        this.modifiedList.push([line.objectId, JSON.parse(JSON.stringify(line.originalState)), 'delete']);
+        this.emit('canRevoke', { canRevoke: true });
+      });
+      this.add(false, true, line);
     }
   }
 
@@ -900,17 +901,23 @@ export class Canvas extends EventCenter {
         rx: this.brush.rx || 0,
         ry: this.brush.ry || 0,
       });
+      rect.objectId = this.userId + `${new Date().valueOf()}`;
       rect.on('added', () => {
-        console.log('rect被添加了');
-        this.modifiedList.push([rect.objectId, { ...rect.originalState }, 'added']);
-        console.log('modifiedList', this.modifiedList);
+        rect.saveState();
+        this.modifiedList.push([rect.objectId, JSON.parse(JSON.stringify(rect.originalState)), 'added']);
+        this.emit('canRevoke', { canRevoke: true });
       });
       rect.on('modified', () => {
-        console.log('rect被修改了');
-        this.modifiedList.push([rect.objectId, { ...rect.originalState }, 'modified']);
-        console.log('modifiedList', this.modifiedList);
+        rect.saveState();
+        this.modifiedList.push([rect.objectId, JSON.parse(JSON.stringify(rect.originalState)), 'modified']);
+        this.emit('canRevoke', { canRevoke: true });
       });
-      this.add(true, rect);
+      rect.on('delete', () => {
+        rect.saveState();
+        this.modifiedList.push([rect.objectId, JSON.parse(JSON.stringify(rect.originalState)), 'delete']);
+        this.emit('canRevoke', { canRevoke: true });
+      });
+      this.add(false, true, rect);
     }
   }
 
@@ -941,17 +948,23 @@ export class Canvas extends EventCenter {
         stroke: this.brush.stroke,
         strokeWidth: this.brush.strokeWidth || 1,
       });
+      diamond.objectId = this.userId + `${new Date().valueOf()}`;
       diamond.on('added', () => {
-        console.log('diamond被添加了');
-        this.modifiedList.push([diamond.objectId, { ...diamond.originalState }, 'added']);
-        console.log('modifiedList', this.modifiedList);
+        diamond.saveState();
+        this.modifiedList.push([diamond.objectId, JSON.parse(JSON.stringify(diamond.originalState)), 'added']);
+        this.emit('canRevoke', { canRevoke: true });
       });
       diamond.on('modified', () => {
-        console.log('diamond被修改了');
-        this.modifiedList.push([diamond.objectId, { ...diamond.originalState }, 'modified']);
-        console.log('modifiedList', this.modifiedList);
+        diamond.saveState();
+        this.modifiedList.push([diamond.objectId, JSON.parse(JSON.stringify(diamond.originalState)), 'modified']);
+        this.emit('canRevoke', { canRevoke: true });
       });
-      this.add(true, diamond);
+      diamond.on('delete', () => {
+        diamond.saveState();
+        this.modifiedList.push([diamond.objectId, JSON.parse(JSON.stringify(diamond.originalState)), 'delete']);
+        this.emit('canRevoke', { canRevoke: true });
+      });
+      this.add(false, true, diamond);
     }
   }
 
@@ -981,17 +994,23 @@ export class Canvas extends EventCenter {
         stroke: this.brush.stroke,
         strokeWidth: this.brush.strokeWidth || 1,
       });
+      triangle.objectId = this.userId + `${new Date().valueOf()}`;
       triangle.on('added', () => {
-        console.log('triangle被添加了');
-        this.modifiedList.push([triangle.objectId, { ...triangle.originalState }, 'added']);
-        console.log('modifiedList', this.modifiedList);
+        triangle.saveState();
+        this.modifiedList.push([triangle.objectId, JSON.parse(JSON.stringify(triangle.originalState)), 'added']);
+        this.emit('canRevoke', { canRevoke: true });
       });
       triangle.on('modified', () => {
-        console.log('triangle被修改了');
-        this.modifiedList.push([triangle.objectId, { ...triangle.originalState }, 'modified']);
-        console.log('modifiedList', this.modifiedList);
+        triangle.saveState();
+        this.modifiedList.push([triangle.objectId, JSON.parse(JSON.stringify(triangle.originalState)), 'modified']);
+        this.emit('canRevoke', { canRevoke: true });
       });
-      this.add(true, triangle);
+      triangle.on('delete', () => {
+        triangle.saveState();
+        this.modifiedList.push([triangle.objectId, JSON.parse(JSON.stringify(triangle.originalState)), 'delete']);
+        this.emit('canRevoke', { canRevoke: true });
+      });
+      this.add(false, true, triangle);
     }
   }
 
@@ -1026,17 +1045,23 @@ export class Canvas extends EventCenter {
         stroke: this.brush.stroke,
         strokeWidth: this.brush.strokeWidth || 1,
       });
+      round.objectId = this.userId + `${new Date().valueOf()}`;
       round.on('added', () => {
-        console.log('round被添加了');
-        this.modifiedList.push([round.objectId, { ...round.originalState }, 'added']);
-        console.log('modifiedList', this.modifiedList);
+        round.saveState();
+        this.modifiedList.push([round.objectId, JSON.parse(JSON.stringify(round.originalState)), 'added']);
+        this.emit('canRevoke', { canRevoke: true });
       });
       round.on('modified', () => {
-        console.log('round被修改了');
-        this.modifiedList.push([round.objectId, { ...round.originalState }, 'modified']);
-        console.log('modifiedList', this.modifiedList);
+        round.saveState();
+        this.modifiedList.push([round.objectId, JSON.parse(JSON.stringify(round.originalState)), 'modified']);
+        this.emit('canRevoke', { canRevoke: true });
       });
-      this.add(true, round);
+      round.on('delete', () => {
+        round.saveState();
+        this.modifiedList.push([round.objectId, JSON.parse(JSON.stringify(round.originalState)), 'delete']);
+        this.emit('canRevoke', { canRevoke: true });
+      });
+      this.add(false, true, round);
     }
   }
 
@@ -1044,21 +1069,22 @@ export class Canvas extends EventCenter {
     if (lab === 1) {
       this.contextTop.lineWidth = this.brush.strokeWidth;
       this.contextTop.strokeStyle = this.brush.stroke;
+      if (!this.brush.headlen) this.brush.headlen = 15;
       this.contextTop.beginPath();
       if (end.x >= start.x) {
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x - 15, start.y);
-        this.contextTop.lineTo(end.x - 15, start.y + 15);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x - 15, start.y - 15);
-        this.contextTop.lineTo(end.x - 15, start.y);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y - this.brush.headlen);
+        this.contextTop.lineTo(end.x - this.brush.headlen, start.y);
       } else {
         this.contextTop.moveTo(start.x, start.y);
-        this.contextTop.lineTo(end.x + 15, start.y);
-        this.contextTop.lineTo(end.x + 15, start.y + 15);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y + this.brush.headlen);
         this.contextTop.lineTo(end.x, start.y);
-        this.contextTop.lineTo(end.x + 15, start.y - 15);
-        this.contextTop.lineTo(end.x + 15, start.y);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y - this.brush.headlen);
+        this.contextTop.lineTo(end.x + this.brush.headlen, start.y);
       }
       this.contextTop.closePath();
       this.contextTop.stroke();
@@ -1070,19 +1096,25 @@ export class Canvas extends EventCenter {
         stroke: this.brush.stroke,
         strokeWidth: this.brush.strokeWidth || 1,
         direction: end.x - start.x,
-        headlen: 15,
+        headlen: this.brush.headlen,
       });
+      arrow.objectId = this.userId + `${new Date().valueOf()}`;
       arrow.on('added', () => {
-        console.log('arrow被添加了');
-        this.modifiedList.push([arrow.objectId, { ...arrow.originalState }, 'added']);
-        console.log('modifiedList', this.modifiedList);
+        arrow.saveState();
+        this.modifiedList.push([arrow.objectId, JSON.parse(JSON.stringify(arrow.originalState)), 'added']);
+        this.emit('canRevoke', { canRevoke: true });
       });
       arrow.on('modified', () => {
-        console.log('arrow被修改了');
-        this.modifiedList.push([arrow.objectId, { ...arrow.originalState }, 'modified']);
-        console.log('modifiedList', this.modifiedList);
+        arrow.saveState();
+        this.modifiedList.push([arrow.objectId, JSON.parse(JSON.stringify(arrow.originalState)), 'modified']);
+        this.emit('canRevoke', { canRevoke: true });
       });
-      this.add(true, arrow);
+      arrow.on('delete', () => {
+        arrow.saveState();
+        this.modifiedList.push([arrow.objectId, JSON.parse(JSON.stringify(arrow.originalState)), 'delete']);
+        this.emit('canRevoke', { canRevoke: true });
+      });
+      this.add(false, true, arrow);
     }
   }
   _drawText(target) {
@@ -1098,17 +1130,20 @@ export class Canvas extends EventCenter {
       fillText: this.brush.fillText,
       strokeText: this.brush.strokeText,
     });
+    text.objectId = this.userId + `${new Date().valueOf()}`;
     text.on('added', () => {
-      console.log('text被添加了');
-      this.modifiedList.push([text.objectId, { ...text.originalState }, 'added']);
-      console.log('modifiedList', this.modifiedList);
+      this.modifiedList.push([text.objectId, JSON.parse(JSON.stringify(text.originalState)), 'added']);
+      this.emit('canRevoke', { canRevoke: true });
     });
     text.on('modified', () => {
-      console.log('text被修改了');
-      this.modifiedList.push([text.objectId, { ...text.originalState }, 'modified']);
-      console.log('modifiedList', this.modifiedList);
+      this.modifiedList.push([text.objectId, JSON.parse(JSON.stringify(text.originalState)), 'modified']);
+      this.emit('canRevoke', { canRevoke: true });
     });
-    this.add(true, text);
+    text.on('delete', () => {
+      this.modifiedList.push([text.objectId, JSON.parse(JSON.stringify(text.originalState)), 'delete']);
+      this.emit('canRevoke', { canRevoke: true });
+    });
+    this.add(false, true, text);
   }
   _drawPenPath(penPathList, lab) {
     let maxx = Number.MIN_SAFE_INTEGER,
@@ -1141,17 +1176,20 @@ export class Canvas extends EventCenter {
         stroke: this.brush.stroke,
         strokeWidth: this.brush.strokeWidth || 1,
       });
+      penPath.objectId = this.userId + `${new Date().valueOf()}`;
       penPath.on('added', () => {
-        console.log('penPath被添加了');
-        this.modifiedList.push([penPath.objectId, { ...penPath.originalState }, 'added']);
-        console.log('modifiedList', this.modifiedList);
+        this.modifiedList.push([penPath.objectId, JSON.parse(JSON.stringify(penPath.originalState)), 'added']);
+        this.emit('canRevoke', { canRevoke: true });
       });
       penPath.on('modified', () => {
-        console.log('penPath被修改了');
-        this.modifiedList.push([penPath.objectId, { ...penPath.originalState }, 'modified']);
-        console.log('modifiedList', this.modifiedList);
+        this.modifiedList.push([penPath.objectId, JSON.parse(JSON.stringify(penPath.originalState)), 'modified']);
+        this.emit('canRevoke', { canRevoke: true });
       });
-      this.add(true, penPath);
+      penPath.on('delete', () => {
+        this.modifiedList.push([penPath.objectId, JSON.parse(JSON.stringify(penPath.originalState)), 'delete']);
+        this.emit('canRevoke', { canRevoke: true });
+      });
+      this.add(false, true, penPath);
       this.penPath = [];
     } else {
       const graffitiPath = new FabricObjects.Pen({
@@ -1178,56 +1216,83 @@ export class Canvas extends EventCenter {
     this.modifyBrush({ type: 0 });
     if (this.modifiedList.length) {
       const temp = this.modifiedList.pop();
-      for (const i of this._objects) {
-        if (i.objectId === temp[0]) {
-          if (i.isLocked) {
-            this.modifiedList.push(temp);
-            return;
-          }
-          if (temp[2] === 'modified') {
-            i.saveState();
-            this.modifiedAgainList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
-            for (const k in temp[1]) {
-              i[k] = temp[1][k];
+      if (temp[2] === 'delete') {
+        this.modifiedAgainList.push(temp);
+        const newObject = new FabricObjects[temp[1].type](temp[1]);
+        newObject.objectId = temp[0];
+        this.add(true, true, newObject);
+      } else {
+        for (const i of this._objects) {
+          if (i.objectId === temp[0]) {
+            if (i.isLocked) {
+              this.modifiedList.push(temp);
+              return;
             }
-          } else {
-            this.modifiedAgainList.push(temp);
-            i.visible = false;
+            if (temp[2] === 'modified') {
+              i.saveState();
+              this.modifiedAgainList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
+              for (const k in temp[1]) {
+                i[k] = temp[1][k];
+              }
+              this.emit('object:modified', { target: i });
+            } else if (temp[2] === 'added') {
+              i.saveState();
+              this.modifiedAgainList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
+              this.delete(temp[0], true, true);
+            }
+            break;
           }
-          this.emit('object:modified', { target: i });
-          break;
         }
       }
       this.renderAll();
     }
+    if (this.modifiedAgainList.length) {
+      this.emit('canRedo', { canRedo: true });
+    }
+    if (!this.modifiedList.length) {
+      this.emit('canRevoke', { canRevoke: false });
+    }
   }
 
   redo() {
-    console.log(this.modifiedAgainList);
     this.modifyBrush({ type: 0 });
     if (this.modifiedAgainList.length) {
       const temp = this.modifiedAgainList.pop();
-      for (const i of this._objects) {
-        if (i.objectId === temp[0]) {
-          if (i.isLocked) {
-            this.modifiedAgainList.push(temp);
-            return;
-          }
-          if (temp[2] === 'modified') {
-            i.saveState();
-            this.modifiedList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
-            for (const k in temp[1]) {
-              i[k] = temp[1][k];
+      if (temp[2] === 'added') {
+        this.modifiedList.push(temp);
+        const newObject = new FabricObjects[temp[1].type](temp[1]);
+        newObject.objectId = temp[0];
+        this.add(true, true, newObject);
+      } else {
+        for (const i of this._objects) {
+          if (i.objectId === temp[0]) {
+            if (i.isLocked) {
+              this.modifiedAgainList.push(temp);
+              return;
             }
-          } else {
-            this.modifiedList.push(temp);
-            i.visible = true;
+            if (temp[2] === 'modified') {
+              i.saveState();
+              this.modifiedList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
+              for (const k in temp[1]) {
+                i[k] = temp[1][k];
+              }
+              this.emit('object:modified', { target: i });
+            } else if (temp[2] === 'delete') {
+              i.saveState();
+              this.modifiedList.push([temp[0], JSON.parse(JSON.stringify(i.originalState)), temp[2]]);
+              this.delete(temp[0], true, true);
+            }
+            break;
           }
-          this.emit('object:modified', { target: i });
-          break;
         }
       }
       this.renderAll();
+    }
+    if (!this.modifiedAgainList.length) {
+      this.emit('canRedo', { canRedo: false });
+    }
+    if (this.modifiedList.length) {
+      this.emit('canRevoke', { canRevoke: true });
     }
   }
 
@@ -1254,7 +1319,7 @@ export class Canvas extends EventCenter {
       atop,
     );
   }
-  setActiveObject(object: FabricObject, e: MouseEvent): Canvas {
+  setActiveObject(object: FabricObject, e?: MouseEvent): Canvas | undefined {
     if (object.isLocked) return;
     if (this._activeObject) {
       // 如果当前有激活物体
@@ -1267,7 +1332,6 @@ export class Canvas extends EventCenter {
       object.setActive(true);
       this.renderAll();
     });
-    object.emit('canLock');
     this.renderAll();
 
     // this.emit('object:selected', { target: object, e });
@@ -1276,8 +1340,6 @@ export class Canvas extends EventCenter {
   }
   /** 记录当前物体的变换状态 */
   _setupCurrentTransform(e: MouseEvent, target: FabricObject) {
-    console.log('abc', e);
-
     let action = 'drag',
       corner,
       pointer = Util.getPointer(e, target.canvas.upperCanvasEl);
@@ -1347,7 +1409,6 @@ export class Canvas extends EventCenter {
       originY,
     };
     let { target: target2, ...other } = this._currentTransform;
-    console.log(JSON.stringify(other, null, 4));
 
     // this._resetCurrentTransform(e); // 好像没必要重新赋值？除非按下了 altKey 键
   }
@@ -1389,7 +1450,13 @@ export class Canvas extends EventCenter {
       i = 0,
       len = allObjects.length;
     for (; i < len; i++) {
-      allObjects[i].setActive(false);
+      if (allObjects[i].active) {
+        allObjects[i].setActive(false);
+        console.log('close', 'emit1');
+
+        this.emit('closeModify');
+        this.emit('sendUnlock', { objectId: allObjects[i].objectId });
+      }
     }
     this.discardActiveGroup();
     this.discardActiveObject();
@@ -1399,6 +1466,8 @@ export class Canvas extends EventCenter {
   discardActiveObject() {
     if (this._activeObject) {
       this._activeObject.setActive(false);
+      console.log('close', 'emit2');
+      this.emit('closeModify');
       this.emit('sendUnlock', { objectId: this._activeObject.objectId });
     }
     this._activeObject = null;
@@ -1678,21 +1747,22 @@ export class Canvas extends EventCenter {
    * 如果一次性加入大量元素，就会做很多无用功，
    * 所以可以加一个属性来先批量添加元素，最后再一次渲染（手动调用 renderAll 函数即可）
    */
-  add(isFirst: boolean, ...args): Canvas {
+  add(isRevoke: boolean, isFirst: boolean, ...args): Canvas {
     this._objects.push.apply(this._objects, args);
     for (let i = args.length; i--; ) {
-      this._initObject(args[i], isFirst);
+      this._initObject(args[i], isFirst, isRevoke);
       args[i].timestamp = new Date().valueOf();
     }
     this.renderAll();
     return this;
   }
-  delete(objectId, isFirst: boolean): Canvas {
+  delete(objectId: string, isFirst: boolean, unNeedActive = false): Canvas {
     if (isFirst) {
       for (let i = 0; i < this._objects.length; i++) {
         if (this._objects[i].objectId === objectId) {
-          if (this._objects[i].active) {
+          if (this._objects[i].active || unNeedActive) {
             this.emit('object:delete', { target: this._objects[i] });
+            !unNeedActive && this._objects[i].emit('delete');
             this._objects.splice(i, 1);
           } else {
             this.setActiveObject(this._objects[i]);
@@ -1710,14 +1780,15 @@ export class Canvas extends EventCenter {
     this.renderAll();
     return this;
   }
-  _initObject(obj: FabricObject, isFirst: boolean) {
+  _initObject(obj: FabricObject, isFirst: boolean, isRevoke: boolean) {
     obj.setupState();
     obj.setCoords();
-    obj.canvas = this;
-    obj.objectId = this.userId + `${new Date().valueOf()}`;
+    if (this?.upperCanvasEl) {
+      obj.canvas = this;
+    }
     if (isFirst) {
       this.emit('object:added', { target: obj });
-      obj.emit('added');
+      !isRevoke && obj.emit('added');
     }
   }
   clearContext(ctx: CanvasRenderingContext2D): Canvas {

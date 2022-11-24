@@ -13,27 +13,31 @@ type optionsType = {
   token: string;
 };
 export class Room extends EventCenter {
-  public canvasMap: Map<string, Canvas> = new Map();
-  public roomId: string;
-  public onlyRead: boolean;
+  public canvasMap: Map<string, FabricObject[]> = new Map();
+  public roomId: string = '';
+  public onlyRead: boolean = false;
   public ws: any = null;
   public currentCanvasId: string = '';
-  public userId: string;
+  public userId: string = '';
   public timeoutObj: any = null;
   public serverTimeoutObj: any = null;
-  public reConnectObj: any = null;
-  public el: HTMLCanvasElement;
+  public canvas: Canvas;
   public userName: string;
+  public createCanvasTimeObj: any = null;
 
   constructor(options: optionsType) {
     super();
     this.roomId = options.roomId;
     this.userId = options.userId;
     this.onlyRead = options.onlyRead || false;
-    this.el = options.el;
+    this.canvas = new Canvas(options.el);
+    this.canvas.onlyRead = this.onlyRead;
+    this.canvas.userId = this.userId;
     this.userName = options.userName;
     this.initWS(options.token);
     this.initBindRoomEvent();
+    this.initBindCanvasEvent();
+    this.ishostInit();
   }
 
   initWS(token) {
@@ -41,63 +45,116 @@ export class Room extends EventCenter {
     this.addHeartBeat();
     this.ws.onmessage = (e: any) => {
       const res = JSON.parse(e.data);
-      if (res.modifyOnlyRead === 1) {
-        this.emit('modifyOnlyRead');
+      if (res.content === 'modifyOnlyRead') {
+        this.onlyRead = !this.onlyRead;
+        this.canvas.onlyRead = this.onlyRead;
+        this.emit('modifyOnlyRead', {});
       } else if (res.contentType === 1) {
         clearTimeout(this.serverTimeoutObj);
       } else if (res.contentType === 2) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
-          const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
           const objects = JSON.parse(res.content);
-          canvas.emit('update', { objects: objects });
+          const canvasId = res.toWhiteBoard;
+          this.emit('update', { canvasId, objects });
         }
       } else if (res.contentType === 3) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
-          const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
           const objectData = JSON.parse(res.content);
           const newObject = new FabricObjects[objectData.type](objectData);
-          canvas.add(false, newObject);
           newObject.objectId = objectData.objectId;
+          newObject.canvas = this.canvas;
+          this.canvasMap.get(res.toWhiteBoard)?.push(newObject);
+          if (res.toWhiteBoard === this.currentCanvasId) {
+            this.canvas.add(false, newObject);
+            console.log('hhhhh', newObject);
+          }
         }
       } else if (res.contentType === 4) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
-          const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
-          for (const object of canvas._objects) {
-            if (object.objectId === res.objectId) {
-              if (object.active) return;
-              const objectData = JSON.parse(res.content) as FabricObject;
-              for (const key of Object.keys(objectData)) {
-                object[key] = objectData[key];
+          const objectData = JSON.parse(res.content) as FabricObject;
+          if (res.toWhiteBoard === this.currentCanvasId) {
+            let needNew = true;
+            for (const object of this.canvas._objects) {
+              if (object.objectId === res.objectId) {
+                needNew = false;
+                if (object.active) return;
+
+                for (const key of Object.keys(objectData)) {
+                  object[key] = objectData[key];
+                }
+                this.canvas.renderAll();
+                this.canvasMap.set(res.toWhiteBoard, this.canvas._objects);
+                break;
               }
-              canvas.renderAll();
+            }
+            if (needNew) {
+              const newObject = new FabricObjects[objectData.type](objectData);
+              newObject.objectId = res.objectId;
+              newObject.canvas = this.canvas;
+              this.canvas.add(false, newObject);
+              this.canvasMap.get(res.toWhiteBoard)?.push(newObject);
+            }
+          } else {
+            let needNew = true;
+            for (const object of this.canvasMap.get(res.toWhiteBoard) as FabricObject[]) {
+              if (object.objectId === res.objectId) {
+                needNew = false;
+                for (const key of Object.keys(objectData)) {
+                  object[key] = objectData[key];
+                }
+              }
+            }
+            if (needNew) {
+              const newObject = new FabricObjects[objectData.type](objectData);
+              newObject.objectId = res.objectId;
+              newObject.canvas = this.canvas;
+              this.canvasMap.get(res.toWhiteBoard)?.push(newObject);
             }
           }
         }
       } else if (res.contentType === 5) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
-          const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
-          canvas.delete(res.objectId, false);
+          if (res.toWhiteBoard === this.currentCanvasId) {
+            this.canvas.delete(res.objectId, false);
+          }
+          for (let i = 0; i < this.canvasMap.get(res.toWhiteBoard)!.length; i++) {
+            if (this.canvasMap.get(res.toWhiteBoard)[i].objectId === res.objectId) {
+              this.canvasMap.set(res.toWhiteBoard, this.canvasMap.get(res.toWhiteBoard)!.splice(i, 1));
+            }
+          }
         }
       } else if (res.contentType === 6) {
         const objects = JSON.parse(res.content);
-
-        this.emit('switch', { canvasId: res.totoWhiteBoard, objects });
+        this.emit('switch', { canvasId: res.toWhiteBoard, objects });
       } else if (res.contentType === 7) {
         if (this.canvasMap.has(res.toWhiteBoard)) {
-          const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
-          canvas.emit('updateLock', { objectId: res.objectId, isLock: res.isLock });
+          this.emit('updateLock', { canvasId: res.toWhiteBoard, objectId: res.objectId, isLock: res.isLock });
         }
       } else if (res.contentType === 8) {
         const canvasId = JSON.parse(res.content).canvasId;
+        this.canvasMap.set(canvasId, []);
         this.emit('createCanvas', { canvasId });
-        this.emit('new', { canvasId, userId: this.userName });
+        this.emit('new', { canvasId, needSwitch: res.userName === this.userId });
       } else if (res.contentType === 9) {
-        if (this.canvasMap.has(res.toWhiteBoard)) {
-          const canvas = this.canvasMap.get(res.toWhiteBoard) as Canvas;
-          for (const i of canvas._objects) {
+        if (this.currentCanvasId === res.toWhiteBoard) {
+          for (const i of this.canvas._objects) {
             if (i.objectId === res.objectId) {
               if (!res.isLock) {
                 i.emit('canLock');
+                const map = {
+                  Line: 1,
+                  Rect: 3,
+                  Diamond: 4,
+                  Triangle: 5,
+                  Round: 6,
+                  Arrow: 7,
+                  Text: 9,
+                  Pen: 10,
+                };
+                const options = JSON.parse(JSON.stringify(i.originalState));
+                options.type = map[options.type];
+                this.emit('canModify', { objectId: res.objectId, options });
+                console.log('hhh', res.objectId, options);
               } else {
                 i.off('canLock');
               }
@@ -109,53 +166,90 @@ export class Room extends EventCenter {
         const leaveUserId = res.userName;
         this.emit('leaveRoom', { leaveUserId });
       } else if (res.contentType === 11) {
-        const canvasIds = JSON.parse(res.content).canvasIds;
+        const canvasIds = JSON.parse(res.content);
+        console.log('abc', res.content);
+
         for (const i of canvasIds) {
           if (!this.canvasMap.has(i)) {
-            this.emit('createCanvas', { canvasId: i });
+            this.canvasMap.set(i, []);
+            console.log('map', this.canvasMap);
+
+            this.emit('new', { canvasId: i });
           }
         }
+        console.log('abc', 222222);
+
+        this.emit('isNeedCreateFirst');
       } else if (res.contentType === 12) {
         const message = JSON.parse(res.content).message;
         this.emit('customizeMessage', { message });
       } else if (res.contentType === 13) {
         const joinUserId = res.userName;
         this.emit('joinRoom', { joinUserId });
+      } else if (res.contentType === 14) {
+        this.emit('switchToHost', { canvasId: res.content });
       }
     };
-    if (this.ws && this.ws.readyState === 1) {
-      this.ws.send(
-        JSON.stringify({
-          from: this.userId,
-          toRoom: this.roomId,
-          contentType: 11,
-        }),
-      );
-    }
   }
 
   initBindRoomEvent() {
-    this.on('switch', (options: { canvasId: string; objects: string[] }) => {
-      if (this.canvasMap.has(options.canvasId)) {
-        const temp = this.canvasMap.get(this.currentCanvasId) as Canvas;
-        const activeObject = temp.getActiveObject();
+    this.on('update', (options: { canvasId: string; objects: string[] }) => {
+      let objects = options.objects.filter((i) => i).map((i) => JSON.parse(i));
+      console.log('hhh', objects);
+      if (options.canvasId === this.currentCanvasId) {
+        let activeObject = this.canvas.getActiveObject();
         if (activeObject) {
-          temp.discardActiveObject();
+          objects = objects.filter((i) => i.objectId !== activeObject.objectId);
+          objects.push(activeObject);
         }
-        temp.clearContext(temp.contextContainer);
-        temp.clearContext(temp.contextTop);
-        this.currentCanvasId = options.canvasId;
-        const canvas = this.canvasMap.get(options.canvasId) as Canvas;
-        canvas.emit('update', { objects: options });
+      }
+      if (this.canvasMap.has(options.canvasId)) {
+        for (const i of objects) {
+          let needNew = true;
+          for (const j of this.canvasMap.get(options.canvasId) as FabricObject[]) {
+            if (i.objectId === j.objectId) {
+              if (i.isInGroup) break;
+              for (const key in i) {
+                j[key] = i[key];
+                needNew = false;
+              }
+              break;
+            }
+          }
+          if (needNew) {
+            const newObject = new FabricObjects[i.type](i);
+            newObject.objectId = i.objectId;
+            newObject.canvas = this.canvas;
+            this.canvasMap.get(options.canvasId)!.push(newObject);
+          }
+        }
+      }
+      if (this.currentCanvasId === options.canvasId) {
+        this.canvas._objects = this.canvasMap.get(options.canvasId) as FabricObject[];
+        this.canvas.renderAll();
       }
     });
-    this.on('createCanvas', (param: { canvasId: string }) => {
-      const canvas = new Canvas(this.el);
-      canvas.canvasId = param.canvasId;
-      canvas.onlyRead = this.onlyRead;
-      canvas.userId = this.userId;
-      this.initBindCanvasEvent(canvas);
-      this.canvasMap.set(param.canvasId, canvas);
+    this.on('switch', (options: { canvasId: string; objects: string[] }) => {
+      if (this.canvasMap.has(options.canvasId)) {
+        this.canvas.modifiedList = [];
+        this.canvas.modifiedAgainList = [];
+        this.emit('canRevoke', { canRevoke: false });
+        this.emit('canRedo', { canRedo: false });
+        if (this.currentCanvasId) {
+          const activeObject = this.canvas.getActiveObject();
+          if (activeObject) {
+            this.canvas.discardActiveObject();
+          }
+          this.canvas.clearContext(this.canvas.contextContainer);
+          this.canvas.clearContext(this.canvas.contextTop);
+          this.canvas.clearContext(this.canvas.contextCache);
+        }
+        this.currentCanvasId = options.canvasId;
+        this.canvas._objects = this.canvasMap.get(options.canvasId) as FabricObject[];
+        this.canvas.renderAll();
+        this.emit('update', { canvasId: options.canvasId, objects: options });
+        this.emit('switchName', { canvasId: options.canvasId });
+      }
     });
     this.on('customizeSend', (param: { content: string }) => {
       this.ws.send(
@@ -166,6 +260,48 @@ export class Room extends EventCenter {
           content: param.content,
         }),
       );
+    });
+    this.on('hasModified', (param: { objectId: string; options: {} }) => {
+      for (const i of this.canvas._objects) {
+        console.log('abcd', 1111111, i);
+
+        if (i.objectId === param.objectId) {
+          for (const k in param.options) {
+            console.log('abcd', i, 2222222, param.options);
+            i[k] = param.options[k];
+          }
+          i.timestamp = new Date().valueOf();
+          this.canvas.emit('object:modified', { target: i });
+          i.emit('modified');
+          this.canvas.renderAll();
+          for (const j of this.canvasMap.get(this.currentCanvasId)) {
+            if (j.objectId === param.objectId) {
+              for (const k of param.options) {
+                j[k] = param.options[k];
+              }
+            }
+          }
+          break;
+        }
+      }
+    });
+    this.on('createCanvas', (options: { canvasId: string }) => {
+      this.switchCanvas(options.canvasId);
+    });
+    this.on('updateLock', (options: { canvasId: string; objectId: string; isLock: boolean }) => {
+      if (this.currentCanvasId === options.canvasId) {
+        for (const i of this.canvas._objects) {
+          if (i.objectId === options.objectId) {
+            i.updateLock(options.isLock);
+          }
+        }
+      }
+
+      for (const i of this.canvasMap.get(options.canvasId) as FabricObject[]) {
+        if (i.objectId === options.objectId) {
+          i.updateLock(options.isLock);
+        }
+      }
     });
   }
 
@@ -206,22 +342,57 @@ export class Room extends EventCenter {
   closeWs() {
     if (this.ws && this.ws.readyState === 1) {
       this.ws.close();
-      clearInterval(this.reConnectObj);
     }
   }
 
-  createCanvas() {
-    if (this.ws && this.ws.readyState === 1)
-      this.ws.send(JSON.stringify({ from: this.userId, toRoom: this.roomId, contentType: 8 }));
+  ishostInit() {
+    this.on('isNeedCreateFirst', () => {
+      if (Object.keys(this.canvasMap).length === 0) {
+        this.createCanvas();
+      } else {
+        this.on('switchToHost', (options: { canvasId: string }) => {
+          this.switchCanvas(options.canvasId);
+          this.off('switchToHost');
+        });
+        this.ws.send(
+          JSON.stringify({
+            from: this.userId,
+            toRoom: this.roomId,
+            contentType: 14,
+          }),
+        );
+      }
+    });
+    const i = setInterval(() => {
+      if (this.ws && this.ws.readyState === 1) {
+        clearInterval(i);
+        this.ws.send(
+          JSON.stringify({
+            from: this.userId,
+            toRoom: this.roomId,
+            contentType: 11,
+          }),
+        );
+      }
+    }, 200);
   }
 
-  initBindCanvasEvent(canvas: Canvas) {
-    canvas.on('sendLock', (options: { objectId: string }) => {
+  createCanvas() {
+    this.createCanvasTimeObj = setInterval(() => {
+      if (this.ws && this.ws.readyState === 1) {
+        this.ws.send(JSON.stringify({ from: this.userId, toRoom: this.roomId, contentType: 8 }));
+        clearInterval(this.createCanvasTimeObj);
+      }
+    }, 200);
+  }
+
+  initBindCanvasEvent() {
+    this.canvas.on('sendLock', (options: { objectId: string }) => {
       this.ws.send(
         JSON.stringify({
           from: this.userId,
           toRoom: this.roomId,
-          toWhiteBoard: canvas.canvasId,
+          toWhiteBoard: this.currentCanvasId,
           objectId: options.objectId,
           isLock: true,
           contentType: 7,
@@ -229,32 +400,26 @@ export class Room extends EventCenter {
         }),
       );
     });
-    canvas.on('sendUnLock', (options: { objectId: string }) => {
+    this.canvas.on('sendUnlock', (options: { objectId: string }) => {
       this.ws.send(
         JSON.stringify({
           from: this.userId,
           toRoom: this.roomId,
-          toWhiteBoard: canvas.canvasId,
+          toWhiteBoard: this.currentCanvasId,
           objectId: options.objectId,
           isLock: false,
           contentType: 7,
         }),
       );
     });
-    canvas.on('updateLock', (options: { objectId: string; isLock: boolean }) => {
-      for (const i of canvas._objects) {
-        if (i.objectId === options.objectId) {
-          i.updateLock(options.isLock);
-        }
-      }
-    });
-    canvas.on('object:added', (options: { target: FabricObject }) => {
+
+    this.canvas.on('object:added', (options: { target: FabricObject }) => {
       options.target.saveState();
       this.ws.send(
         JSON.stringify({
           from: this.userId,
           toRoom: this.roomId,
-          toWhiteBoard: canvas.canvasId,
+          toWhiteBoard: this.currentCanvasId,
           objectId: options.target.objectId,
           content: JSON.stringify(options.target.originalState),
           contentType: 3,
@@ -262,25 +427,25 @@ export class Room extends EventCenter {
         }),
       );
     });
-    canvas.on('object:delete', (options: { target: FabricObject }) => {
+    this.canvas.on('object:delete', (options: { target: FabricObject }) => {
       this.ws.send(
         JSON.stringify({
           from: this.userId,
           toRoom: this.roomId,
-          toWhiteBoard: canvas.canvasId,
+          toWhiteBoard: this.currentCanvasId,
           objectId: options.target.objectId,
           contentType: 5,
           timestamp: options.target.timestamp,
         }),
       );
     });
-    canvas.on('object:modified', (options: { target: FabricObject }) => {
+    this.canvas.on('object:modified', (options: { target: FabricObject }) => {
       options.target.saveState();
       this.ws.send(
         JSON.stringify({
           from: this.userId,
           toRoom: this.roomId,
-          toWhiteBoard: canvas.canvasId,
+          toWhiteBoard: this.currentCanvasId,
           objectId: options.target.objectId,
           content: JSON.stringify(options.target.originalState),
           contentType: 4,
@@ -288,45 +453,28 @@ export class Room extends EventCenter {
         }),
       );
     });
-    canvas.on('update', (options: { objects: string[] }) => {
-      let objects = options.objects.filter((i) => i).map((i) => JSON.parse(i) as FabricObject);
-      let activeObject = canvas.getActiveObject();
-      if (activeObject) {
-        objects = objects.filter((i) => i.objectId !== activeObject.objectId);
-        objects.push(activeObject);
-      }
-      for (const i of canvas._objects) {
-        for (const j of objects) {
-          if (i.objectId === j.objectId) {
-            for (const key in j) {
-              i[key] = j[key];
-            }
-            break;
-          }
-        }
-      }
-      if (this.currentCanvasId === canvas.canvasId) {
-        canvas.renderAll();
-      }
-    });
   }
 
   switchCanvas(canvasId: string) {
     if (this.canvasMap.has(canvasId)) {
       if (this.currentCanvasId) {
-        const temp = this.canvasMap.get(this.currentCanvasId) as Canvas;
-        const activeObject = temp.getActiveObject();
+        const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
-          temp.discardActiveObject();
+          this.canvas.discardActiveObject();
         }
-        temp.clearContext(temp.contextContainer);
-        temp.clearContext(temp.contextTop);
+        this.canvas.clearContext(this.canvas.contextContainer);
+        this.canvas.clearContext(this.canvas.contextTop);
+        this.canvas.clearContext(this.canvas.contextCache);
       }
 
       this.currentCanvasId = canvasId;
 
-      const canvas = this.canvasMap.get(canvasId) as Canvas;
-      canvas.renderAll();
+      this.canvas._objects = this.canvasMap.get(canvasId) as FabricObject[];
+      this.canvas.modifiedList = [];
+      this.canvas.modifiedAgainList = [];
+      this.emit('canRevoke', { canRevoke: false });
+      this.emit('canRedo', { canRedo: false });
+      this.canvas.renderAll();
       this.ws.send(
         JSON.stringify({
           from: this.userId,
@@ -339,35 +487,23 @@ export class Room extends EventCenter {
     }
   }
 
-  getCanvas(canvasId: string) {
-    return this.canvasMap.get(canvasId);
-  }
-
   modifyOnlyRead() {
-    if (this.onlyRead) {
-      this.canvasMap.forEach((value) => {
-        value.onlyRead = false;
-      });
-    } else {
-      this.canvasMap.forEach((value) => {
-        value.onlyRead = true;
-      });
-      this.ws.send(
-        JSON.stringify({
-          from: this.userId,
-          toRoom: this.roomId,
-          toWhiteBoard: this.currentCanvasId,
-          onlyRead: true,
-          contentType: 6,
-        }),
-      );
-    }
+    this.onlyRead = !this.onlyRead;
+    this.canvas.onlyRead = this.onlyRead;
     this.ws.send(
       JSON.stringify({
-        modifyOnlyRead: 1,
+        content: 'modifyOnlyRead',
+        contentType: '',
+        from: this.userId,
+        toRoom: this.roomId,
       }),
     );
-    this.onlyRead = !this.onlyRead;
+    if (this.onlyRead) {
+      if (this.currentCanvasId) {
+        this.switchCanvas(this.currentCanvasId);
+      }
+    }
+    this.emit('modifyOnlyRead');
   }
 
   kickOutRoom(userId: string) {
@@ -379,30 +515,34 @@ export class Room extends EventCenter {
         contentType: 10,
       }),
     );
+    this.ws.close();
   }
 
-  exportCanvas(canvasId: string) {
-    if (this.canvasMap.has(canvasId)) {
-      const temp = this.canvasMap.get(this.currentCanvasId) as Canvas;
-      const activeObject = temp.getActiveObject();
+  exportCanvas() {
+    if (this.currentCanvasId) {
+      const activeObject = this.canvas.getActiveObject();
       if (activeObject) {
-        temp.discardActiveObject();
+        this.canvas.discardActiveObject();
       }
-      const objects = temp._objects.map((i) => {
-        i.saveState();
-        return i.originalState;
-      });
-      return btoa(JSON.stringify(objects));
     }
+    const objects = this.canvas._objects.map((i) => {
+      i.saveState();
+      return i.originalState;
+    });
+    return btoa(JSON.stringify(objects));
   }
 
-  importCanvas(canvasId: string, canvasData: string) {
-    const objects = JSON.parse(atob(canvasData)).map((i) => new FabricObjects[i.type](i));
-    console.log('abc', objects);
-
-    if (this.canvasMap.has(canvasId)) {
-      const canvas = this.canvasMap.get(canvasId) as Canvas;
-      canvas.add(true, ...objects);
+  importCanvas(canvasData: string) {
+    const objects = JSON.parse(atob(canvasData)).map((i) => {
+      const newObject = new FabricObjects[i.type](i);
+      newObject.canvas = this.canvas;
+      return newObject;
+    });
+    if (this.currentCanvasId) {
+      this.canvas.add(false, true, ...objects);
+      console.log('ccc', this.canvas._objects);
+      this.canvasMap.set(this.currentCanvasId, this.canvas._objects);
+      this.canvas.renderAll();
     }
   }
 }
